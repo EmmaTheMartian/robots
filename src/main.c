@@ -1,6 +1,7 @@
 #include <raylib.h>
+#include <common.h>
 
-int main()
+int main(void)
 {
 	InitWindow(800, 600, "robots");
 	SetTargetFPS(60);

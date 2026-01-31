@@ -3,13 +3,22 @@ set -e
 
 # Optional flags
 CFLAGS=""
+USE_LEAKS=false
 
-# Enable render test mode with: ./run.sh --test
-if [ "$1" = "--test" ] || [ "$1" = "-t" ]
-then
-	CFLAGS="$CFLAGS -DRENDER_TEST"
-	echo "Building with RENDER_TEST enabled"
-fi
+# Parse arguments
+for arg in "$@"
+do
+	case $arg in
+		--test|-t)
+			CFLAGS="$CFLAGS -DRENDER_TEST"
+			echo "Building with RENDER_TEST enabled"
+			;;
+		--leaks|-l)
+			USE_LEAKS=true
+			echo "Will run with leaks detection"
+			;;
+	esac
+done
 
 SOURCES="src/main.c src/rendering.c src/common.c src/audio.c src/render_test.c"
 
@@ -25,4 +34,9 @@ then
 		-o robots -Iraylib/src/ -Isrc/ $SOURCES ./raylib/src/libraylib.a
 fi
 
-./robots
+if [ "$USE_LEAKS" = true ]
+then
+	leaks --atExit -- ./robots
+else
+	./robots
+fi

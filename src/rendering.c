@@ -2,6 +2,7 @@
 #include <math.h>
 #include <stddef.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 static float direction_to_angle(Direction dir)
 {
@@ -366,4 +367,95 @@ void draw_hud(int fuel, int enemy_count, int level)
 
 	snprintf(buffer, sizeof(buffer), "Level: %d", level);
 	DrawText(buffer, 120, y, font_size, WHITE);
+}
+
+Renderer *init_renderer(void)
+{
+	Renderer *r = malloc(sizeof(Renderer));
+
+	r->target = init_render_target();
+	r->tileset = load_tileset("assets/tiles.png");
+	r->player_anim = load_animation("assets/robot.gif", 10, true);
+	r->enemy_anim = load_animation("assets/enemy.gif", 10, true);
+
+	for (int i = 0; i < MAX_ROBOTS; i++)
+	{
+		r->disassembly_anims[i] = load_animation("assets/rapid_disassembly.gif", 15, false);
+	}
+
+	r->level = 1;
+
+	return r;
+}
+
+void free_renderer(Renderer *r)
+{
+	unload_animation(&r->player_anim);
+	unload_animation(&r->enemy_anim);
+	for (int i = 0; i < MAX_ROBOTS; i++)
+	{
+		unload_animation(&r->disassembly_anims[i]);
+	}
+	unload_tileset(&r->tileset);
+	UnloadRenderTexture(r->target);
+	free(r);
+}
+
+void renderer_sync_visuals(Renderer *r, State *state)
+{
+	for (int i = 0; i < state->robot_count; i++)
+	{
+		Robot *robot = &state->robots[i];
+		robot_visual_init(&r->visuals[i], robot->x, robot->y, robot->dir);
+	}
+}
+
+void renderer_update(Renderer *r, State *state, float speed)
+{
+	// Update sprite animations
+	update_animation(&r->player_anim);
+	update_animation(&r->enemy_anim);
+	for (int i = 0; i < state->robot_count; i++)
+	{
+		update_animation(&r->disassembly_anims[i]);
+	}
+
+	// Update robot visual animations (smooth movement/rotation)
+	for (int i = 0; i < state->robot_count; i++)
+	{
+		robot_visual_update(&r->visuals[i], speed);
+	}
+}
+
+void renderer_render(Renderer *r, State *state)
+{
+	begin_virtual_drawing(r->target);
+
+	render_world(&r->tileset, state->world, 0, 0);
+	render_robots(state, r->visuals, &r->player_anim, &r->enemy_anim, 0, 0);
+
+	// Calculate enemy count for HUD
+	int enemy_count = 0;
+	Robot *player = NULL;
+	for (int i = 0; i < state->robot_count; i++)
+	{
+		if (state->robots[i].is_player)
+		{
+			player = &state->robots[i];
+		}
+		else if (!robot_visual_is_disassembled(&r->visuals[i]))
+		{
+			enemy_count++;
+		}
+	}
+
+	int fuel = player ? player->fuel : 0;
+	draw_hud(fuel, enemy_count, r->level);
+
+	end_virtual_drawing(r->target);
+}
+
+RobotVisual *renderer_get_visual(Renderer *r, int index)
+{
+	return &r->visuals[index];
 }

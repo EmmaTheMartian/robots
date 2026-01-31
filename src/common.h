@@ -2,6 +2,9 @@
 #define __robots_common__
 
 
+#include <stdbool.h>
+
+
 typedef enum
 {
 	North,
@@ -21,7 +24,7 @@ typedef struct
 
 
 Robot new_robot(bool is_player);
-void robot_foward(Robot *r);
+void robot_forward(Robot *r);
 void robot_backward(Robot *r);
 void robot_turn_left(Robot *r);
 void robot_turn_right(Robot *r);

@@ -1,20 +1,34 @@
+#include <stdlib.h>
 #include <raylib.h>
 #include <common.h>
+#include <lang.h>
 
 int main(void)
 {
-	InitWindow(800, 600, "robots");
-	SetTargetFPS(60);
+	// InitWindow(800, 600, "robots");
+	// SetTargetFPS(60);
 
-	while (!WindowShouldClose())
+	State state = {0};
+	LangContext ctx = new_context();
+
+	char *program = read_program();
+	if (program)
 	{
-		BeginDrawing();
-		ClearBackground(WHITE);
-
-		DrawFPS(0, 0);
-
-		EndDrawing();
+		interpret(&state, &ctx, program);
+		free(program);
 	}
 
-	CloseWindow();
+	del_context(&ctx);
+
+	// while (!WindowShouldClose())
+	// {
+	// 	BeginDrawing();
+	// 	ClearBackground(WHITE);
+
+	// 	DrawFPS(0, 0);
+
+	// 	EndDrawing();
+	// }
+
+	// CloseWindow();
 }

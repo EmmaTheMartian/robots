@@ -90,6 +90,12 @@ void render_test_logic(Renderer *renderer, State *state)
 	{
 		robot_visual_ram(player_visual, player->dir);
 	}
+
+	// Test: press F to set fuel to zero (triggers game over)
+	if (IsKeyPressed(KEY_F))
+	{
+		player->fuel = 0;
+	}
 }
 
 #endif /* RENDER_TEST */

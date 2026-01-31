@@ -47,6 +47,7 @@ When built with `--test`, the following controls are available:
 | Arrow Right | Turn robot right |
 | R | Ram attack |
 | B | Disassemble a random enemy robot |
+| F | Set fuel to zero (trigger game over) |
 
 ## Documentation
 

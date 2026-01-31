@@ -1,6 +1,13 @@
 #ifndef __robots_common__
 #define __robots_common__
 
+#include <stdbool.h>
+
+#define TILE_EMPTY 0
+#define TILE_WALL 1
+#define TILE_ENERGY 2
+
+#define MAX_ROBOTS 16
 
 typedef enum
 {
@@ -20,8 +27,9 @@ typedef struct
 } Robot;
 
 
-Robot new_robot(bool is_player);
-void robot_foward(Robot *r);
+Robot new_robot(bool is_player, int x, int y, Direction dir);
+
+void robot_forward(Robot *r);
 void robot_backward(Robot *r);
 void robot_turn_left(Robot *r);
 void robot_turn_right(Robot *r);
@@ -37,15 +45,18 @@ typedef struct
 } World;
 
 
-World new_world(int width, int height);
+World *new_world(int width, int height);
 int *get_tile(World *w, int x, int y);
 
 
 typedef struct
 {
-	World world;
-	Robot robots[16];
+	World *world;
+	Robot robots[MAX_ROBOTS];
+	int robot_count;
 } State;
 
+State *generate_world(int width, int height, int robot_count);
+void free_state(State *state);
 
 #endif

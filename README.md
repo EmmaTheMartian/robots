@@ -51,6 +51,8 @@ When built with `--test`, the following controls are available:
 | R | Ram attack |
 | B | Disassemble a random enemy robot |
 | F | Set fuel to zero (trigger game over) |
+| G | Fill fog of war |
+| V | Clear fog around player (3x3 area) |
 
 ## Documentation
 

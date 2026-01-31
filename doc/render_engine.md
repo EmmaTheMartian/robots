@@ -212,6 +212,66 @@ Defined in `rendering.h`:
 | `SCREEN_WIDTH` | 800 | Window width |
 | `SCREEN_HEIGHT` | 800 | Window height |
 
+## Fog of War
+
+The renderer includes a fog of war system with animated scrolling clouds.
+
+### Functions
+
+#### `void renderer_set_fog(Renderer *r, int x, int y, bool fogged)`
+Sets the fog state for a specific tile.
+
+```c
+renderer_set_fog(renderer, 5, 3, true);   // Fog tile at (5,3)
+renderer_set_fog(renderer, 5, 3, false);  // Reveal tile at (5,3)
+```
+
+#### `bool renderer_get_fog(Renderer *r, int x, int y)`
+Returns whether a tile is fogged.
+
+```c
+if (renderer_get_fog(renderer, x, y))
+{
+    // Tile is hidden
+}
+```
+
+#### `void renderer_clear_fog(Renderer *r)`
+Clears all fog (reveals entire map).
+
+```c
+renderer_clear_fog(renderer);
+```
+
+#### `void renderer_fill_fog(Renderer *r, World *w)`
+Fills the entire world with fog.
+
+```c
+renderer_fill_fog(renderer, state->world);
+```
+
+### Typical Usage
+
+```c
+// Start level with full fog
+renderer_fill_fog(renderer, state->world);
+
+// Reveal area around player (3x3)
+for (int dy = -1; dy <= 1; dy++)
+{
+    for (int dx = -1; dx <= 1; dx++)
+    {
+        renderer_set_fog(renderer, player->x + dx, player->y + dy, false);
+    }
+}
+```
+
+### Visual Effect
+
+- Fogged tiles are rendered with a grey tint
+- An animated cloud texture scrolls slowly to the left over fogged areas
+- Robots in fogged tiles are hidden beneath the fog layer
+
 ## Notes
 
 - The virtual canvas (160x160) is scaled up to the screen size (800x800) using nearest-neighbor filtering for a crisp pixel art look.

@@ -96,6 +96,24 @@ void render_test_logic(Renderer *renderer, State *state)
 	{
 		player->fuel = 0;
 	}
+
+	// Test: press G to fill fog of war
+	if (IsKeyPressed(KEY_G))
+	{
+		renderer_fill_fog(renderer, state->world);
+	}
+
+	// Test: press V to clear fog around player (3x3 area)
+	if (IsKeyPressed(KEY_V))
+	{
+		for (int dy = -1; dy <= 1; dy++)
+		{
+			for (int dx = -1; dx <= 1; dx++)
+			{
+				renderer_set_fog(renderer, player->x + dx, player->y + dy, false);
+			}
+		}
+	}
 }
 
 #endif /* RENDER_TEST */

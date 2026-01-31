@@ -78,6 +78,10 @@ void render_robots(State *state, RobotVisual *visuals, Animation *player_anim, A
 
 void draw_hud(int fuel, int enemy_count, int level);
 
+// Maximum world size for fog map
+#define MAX_WORLD_WIDTH 16
+#define MAX_WORLD_HEIGHT 16
+
 // Renderer context - encapsulates all rendering state
 typedef struct
 {
@@ -88,6 +92,10 @@ typedef struct
 	Animation disassembly_anims[MAX_ROBOTS];
 	RobotVisual visuals[MAX_ROBOTS];
 	int level;
+	// Fog of war
+	Texture2D fog_texture;
+	float fog_scroll;
+	bool fog_map[MAX_WORLD_WIDTH * MAX_WORLD_HEIGHT];
 } Renderer;
 
 Renderer *init_renderer(void);
@@ -96,5 +104,11 @@ void renderer_sync_visuals(Renderer *r, State *state);
 void renderer_update(Renderer *r, State *state, float speed);
 void renderer_render(Renderer *r, State *state);
 RobotVisual *renderer_get_visual(Renderer *r, int index);
+
+// Fog of war functions
+void renderer_set_fog(Renderer *r, int x, int y, bool fogged);
+bool renderer_get_fog(Renderer *r, int x, int y);
+void renderer_clear_fog(Renderer *r);
+void renderer_fill_fog(Renderer *r, World *w);
 
 #endif

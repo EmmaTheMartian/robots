@@ -4,6 +4,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+// Forward declarations
+static void render_fog(Renderer *r, World *w, int screen_x, int screen_y);
+
 static float direction_to_angle(Direction dir)
 {
 	// Sprite faces South by default, so South = 0°
@@ -385,6 +388,14 @@ Renderer *init_renderer(void)
 
 	r->level = 1;
 
+	// Fog of war
+	r->fog_texture = LoadTexture("assets/fog_of_war.png");
+	r->fog_scroll = 0.0f;
+	for (int i = 0; i < MAX_WORLD_WIDTH * MAX_WORLD_HEIGHT; i++)
+	{
+		r->fog_map[i] = false;
+	}
+
 	return r;
 }
 
@@ -397,6 +408,7 @@ void free_renderer(Renderer *r)
 		unload_animation(&r->disassembly_anims[i]);
 	}
 	unload_tileset(&r->tileset);
+	UnloadTexture(r->fog_texture);
 	UnloadRenderTexture(r->target);
 	free(r);
 }
@@ -425,6 +437,13 @@ void renderer_update(Renderer *r, State *state, float speed)
 	{
 		robot_visual_update(&r->visuals[i], speed);
 	}
+
+	// Update fog scroll (slow scroll to the left)
+	r->fog_scroll += 0.2f;
+	if (r->fog_scroll >= TILE_SIZE)
+	{
+		r->fog_scroll -= TILE_SIZE;
+	}
 }
 
 void renderer_render(Renderer *r, State *state)
@@ -433,6 +452,7 @@ void renderer_render(Renderer *r, State *state)
 
 	render_world(&r->tileset, state->world, 0, 0);
 	render_robots(state, r->visuals, &r->player_anim, &r->enemy_anim, 0, 0);
+	render_fog(r, state->world, 0, 0);
 
 	// Calculate enemy count for HUD
 	int enemy_count = 0;
@@ -458,4 +478,79 @@ void renderer_render(Renderer *r, State *state)
 RobotVisual *renderer_get_visual(Renderer *r, int index)
 {
 	return &r->visuals[index];
+}
+
+void renderer_set_fog(Renderer *r, int x, int y, bool fogged)
+{
+	if (x >= 0 && x < MAX_WORLD_WIDTH && y >= 0 && y < MAX_WORLD_HEIGHT)
+	{
+		r->fog_map[y * MAX_WORLD_WIDTH + x] = fogged;
+	}
+}
+
+bool renderer_get_fog(Renderer *r, int x, int y)
+{
+	if (x >= 0 && x < MAX_WORLD_WIDTH && y >= 0 && y < MAX_WORLD_HEIGHT)
+	{
+		return r->fog_map[y * MAX_WORLD_WIDTH + x];
+	}
+	return true; // Out of bounds is fogged
+}
+
+void renderer_clear_fog(Renderer *r)
+{
+	for (int i = 0; i < MAX_WORLD_WIDTH * MAX_WORLD_HEIGHT; i++)
+	{
+		r->fog_map[i] = false;
+	}
+}
+
+void renderer_fill_fog(Renderer *r, World *w)
+{
+	for (int y = 0; y < w->height && y < MAX_WORLD_HEIGHT; y++)
+	{
+		for (int x = 0; x < w->width && x < MAX_WORLD_WIDTH; x++)
+		{
+			r->fog_map[y * MAX_WORLD_WIDTH + x] = true;
+		}
+	}
+}
+
+static void render_fog(Renderer *r, World *w, int screen_x, int screen_y)
+{
+	int scroll_offset = (int)r->fog_scroll;
+
+	for (int y = 0; y < w->height; y++)
+	{
+		for (int x = 0; x < w->width; x++)
+		{
+			if (!renderer_get_fog(r, x, y)) continue;
+
+			int px = screen_x + x * TILE_SIZE;
+			int py = screen_y + y * TILE_SIZE;
+
+			// Draw greyed out tile underneath
+			int tile = *get_tile(w, x, y);
+			int src_x = (tile % r->tileset.cols) * TILE_SIZE;
+			int src_y = (tile / r->tileset.cols) * TILE_SIZE;
+			Rectangle src = { src_x, src_y, TILE_SIZE, TILE_SIZE };
+			Vector2 pos = { px, py };
+			DrawTextureRec(r->tileset.texture, src, pos, DARKGRAY);
+
+			// Draw scrolling fog texture with alpha blending
+			// Use two draws to create seamless scrolling
+			Rectangle fog_src1 = { scroll_offset, 0, TILE_SIZE - scroll_offset, TILE_SIZE };
+			Vector2 fog_pos1 = { px, py };
+
+			Rectangle fog_src2 = { 0, 0, scroll_offset, TILE_SIZE };
+			Vector2 fog_pos2 = { px + TILE_SIZE - scroll_offset, py };
+
+			Color fog_color = { 255, 255, 255, 180 }; // Semi-transparent
+			DrawTextureRec(r->fog_texture, fog_src1, fog_pos1, fog_color);
+			if (scroll_offset > 0)
+			{
+				DrawTextureRec(r->fog_texture, fog_src2, fog_pos2, fog_color);
+			}
+		}
+	}
 }

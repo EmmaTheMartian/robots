@@ -59,6 +59,10 @@ typedef struct
 	bool animating;
 	bool disassembled;
 	Animation *disassembly_anim;
+	// Ram animation state
+	bool ramming;
+	bool ram_returning;
+	float ram_origin_x, ram_origin_y;
 } RobotVisual;
 
 void robot_visual_init(RobotVisual *v, int grid_x, int grid_y, Direction dir);
@@ -68,7 +72,10 @@ bool robot_visual_update(RobotVisual *v, float speed);
 bool robot_visual_is_animating(RobotVisual *v);
 void robot_visual_disassemble(RobotVisual *v, Animation *disassembly_anim);
 bool robot_visual_is_disassembled(RobotVisual *v);
+void robot_visual_ram(RobotVisual *v, Direction dir);
 
 void render_robots(State *state, RobotVisual *visuals, Animation *player_anim, Animation *enemy_anim, int screen_x, int screen_y);
+
+void draw_hud(int fuel, int enemy_count, int level);
 
 #endif

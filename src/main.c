@@ -122,10 +122,27 @@ int main(void)
 			}
 		}
 
+		// Test: press R to ram in the player's current direction
+		if (IsKeyPressed(KEY_R) && !robot_visual_is_animating(player_visual))
+		{
+			robot_visual_ram(player_visual, player->dir);
+		}
+
 		begin_virtual_drawing(target);
 
 		render_world(&tileset, state->world, 0, 0);
 		render_robots(state, visuals, &player_anim, &enemy_anim, 0, 0);
+
+		// Calculate enemy count (non-player, non-disassembled robots)
+		int enemy_count = 0;
+		for (int i = 0; i < state->robot_count; i++)
+		{
+			if (!state->robots[i].is_player && !robot_visual_is_disassembled(&visuals[i]))
+			{
+				enemy_count++;
+			}
+		}
+		draw_hud(player->fuel, enemy_count, 1);
 
 		end_virtual_drawing(target);
 	}

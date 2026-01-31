@@ -1,6 +1,7 @@
 #include <rendering.h>
 #include <math.h>
 #include <stddef.h>
+#include <stdio.h>
 
 static float direction_to_angle(Direction dir)
 {
@@ -185,6 +186,10 @@ void robot_visual_init(RobotVisual *v, int grid_x, int grid_y, Direction dir)
 	v->animating = false;
 	v->disassembled = false;
 	v->disassembly_anim = NULL;
+	v->ramming = false;
+	v->ram_returning = false;
+	v->ram_origin_x = v->x;
+	v->ram_origin_y = v->y;
 }
 
 void robot_visual_move_to(RobotVisual *v, int grid_x, int grid_y)
@@ -204,7 +209,8 @@ bool robot_visual_update(RobotVisual *v, float speed)
 {
 	if (!v->animating) return true;
 
-	bool done = true;
+	bool position_done = true;
+	bool rotation_done = true;
 
 	// Move toward target position
 	float dx = v->target_x - v->x;
@@ -215,7 +221,7 @@ bool robot_visual_update(RobotVisual *v, float speed)
 		float step = (dx > 0) ? speed : -speed;
 		if (fabsf(step) > fabsf(dx)) step = dx;
 		v->x += step;
-		done = false;
+		position_done = false;
 	}
 	else
 	{
@@ -227,11 +233,30 @@ bool robot_visual_update(RobotVisual *v, float speed)
 		float step = (dy > 0) ? speed : -speed;
 		if (fabsf(step) > fabsf(dy)) step = dy;
 		v->y += step;
-		done = false;
+		position_done = false;
 	}
 	else
 	{
 		v->y = v->target_y;
+	}
+
+	// Handle ram animation phases
+	if (v->ramming && position_done)
+	{
+		if (!v->ram_returning)
+		{
+			// Reached ram target, now return to origin
+			v->ram_returning = true;
+			v->target_x = v->ram_origin_x;
+			v->target_y = v->ram_origin_y;
+			position_done = false;
+		}
+		else
+		{
+			// Returned to origin, ram complete
+			v->ramming = false;
+			v->ram_returning = false;
+		}
 	}
 
 	// Handle rotation with wraparound
@@ -247,13 +272,14 @@ bool robot_visual_update(RobotVisual *v, float speed)
 		v->rotation += step;
 		if (v->rotation >= 360.0f) v->rotation -= 360.0f;
 		if (v->rotation < 0.0f) v->rotation += 360.0f;
-		done = false;
+		rotation_done = false;
 	}
 	else
 	{
 		v->rotation = v->target_rotation;
 	}
 
+	bool done = position_done && rotation_done;
 	if (done)
 	{
 		v->animating = false;
@@ -277,6 +303,27 @@ void robot_visual_disassemble(RobotVisual *v, Animation *disassembly_anim)
 bool robot_visual_is_disassembled(RobotVisual *v)
 {
 	return v->disassembled;
+}
+
+void robot_visual_ram(RobotVisual *v, Direction dir)
+{
+	// Store origin to return to
+	v->ram_origin_x = v->x;
+	v->ram_origin_y = v->y;
+
+	// Calculate ram target (half a tile in the direction)
+	float offset = TILE_SIZE / 2.0f;
+	switch (dir)
+	{
+		case North: v->target_y = v->y - offset; break;
+		case South: v->target_y = v->y + offset; break;
+		case East:  v->target_x = v->x + offset; break;
+		case West:  v->target_x = v->x - offset; break;
+	}
+
+	v->ramming = true;
+	v->ram_returning = false;
+	v->animating = true;
 }
 
 void render_robots(State *state, RobotVisual *visuals, Animation *player_anim, Animation *enemy_anim, int screen_x, int screen_y)
@@ -303,4 +350,20 @@ void render_robots(State *state, RobotVisual *visuals, Animation *player_anim, A
 			draw_animation_rotated_angle(anim, px, py, v->rotation);
 		}
 	}
+}
+
+void draw_hud(int fuel, int enemy_count, int level)
+{
+	char buffer[32];
+	int font_size = 8;
+	int y = 130;  // Below the 128px world area
+
+	snprintf(buffer, sizeof(buffer), "Fuel: %d", fuel);
+	DrawText(buffer, 2, y, font_size, WHITE);
+
+	snprintf(buffer, sizeof(buffer), "Enemies: %d", enemy_count);
+	DrawText(buffer, 55, y, font_size, WHITE);
+
+	snprintf(buffer, sizeof(buffer), "Level: %d", level);
+	DrawText(buffer, 120, y, font_size, WHITE);
 }

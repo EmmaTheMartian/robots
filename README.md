@@ -24,7 +24,7 @@ This compiles the source files and immediately runs the game.
 |--------|-------------|
 | (none) | Build and run in normal mode |
 | `--test` or `-t` | Build with render test mode enabled |
-| `--leaks` or `-l` | Run with memory leak detection (macOS only) |
+| `--leaks` or `-l` | Run with memory leak detection (`leaks` on macOS, `valgrind` on Linux) |
 
 Options can be combined: `./run.sh --test --leaks`
 

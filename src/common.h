@@ -9,7 +9,6 @@
 #define TILE_WALL 1
 #define TILE_ENERGY 2
 
-#define WORLD_SIZE 64
 #define MAX_FUEL 100
 #define MAX_ROBOTS 16
 
@@ -25,18 +24,25 @@ typedef enum
 
 typedef struct
 {
+	int width, height;
+	int tiles[];
+} World;
+
+World *new_world(int width, int height);
+bool in_bounds(World *w, int x, int y);
+int *get_tile(World *w, int x, int y);
+int *get_tile_with_offset(World *w, int x, int y, Direction d);
+bool is_tile_free(World *w, int x, int y);
+
+
+typedef struct
+{
 	int x, y;
 	int fuel;
 	Direction dir;
 	bool is_player;
 } Robot;
 
-// World helpers
-World new_world();
-int *get_tile(World *w, int x, int y);
-int *get_tile_with_offset(World *w, int x, int y, Direction d);
-
-// Robot helpers
 Robot new_robot(bool is_player, int x, int y, Direction dir);
 void robot_forward(Robot *r);
 void robot_backward(Robot *r);
@@ -45,16 +51,6 @@ void robot_turn_right(Robot *r);
 void robot_refuel(Robot *r, int fuel_amount);
 void robot_ram(Robot *r);
 int robot_scan(Robot *r, World *w);
-
-
-typedef struct
-{
-	int tiles[WORLD_SIZE*WORLD_SIZE];
-} World;
-
-
-World *new_world(int width, int height);
-int *get_tile(World *w, int x, int y);
 
 
 typedef struct

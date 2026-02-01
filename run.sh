@@ -27,16 +27,22 @@ if [ "$os" = "Linux" ]
 then
 	gcc -std=c99 $CFLAGS -Iraylib/src/ -Isrc/ $SOURCES ./raylib/src/libraylib.a \
 		-lGL -lm -lpthread -ldl -lrt -lX11 \
-		-o robots
+		-g -o robots
 elif [ "$os" = "Darwin" ]
 then
 	clang -std=c99 $CFLAGS -framework CoreVideo -framework IOKit -framework Cocoa -framework GLUT -framework OpenGL -framework CoreAudio -framework AudioToolbox \
-		-o robots -Iraylib/src/ -Isrc/ $SOURCES ./raylib/src/libraylib.a
+		-g -o robots -Iraylib/src/ -Isrc/ $SOURCES ./raylib/src/libraylib.a
 fi
 
 if [ "$USE_LEAKS" = true ]
 then
-	leaks --atExit -- ./robots
+	if [ "$os" = "Linux" ]
+	then
+		valgrind --track-origins=yes --leak-check=full --show-leak-kinds=all -s ./robots
+	elif [ "$os" = "Darwin" ]
+	then
+		leaks --atExit -- ./robots
+	fi
 else
 	./robots
 fi

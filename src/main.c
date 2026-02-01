@@ -204,13 +204,24 @@ int main(void)
 				int alive_enemies = 0;
 
 				// count alive enemies
-				for (int i = 0; i < (*state).robot_count; i++)
+				for (int i = 0; i < MAX_ROBOTS; i++)
 				{
 					if (!(*state).robots[i].is_player &&
-						(*state).robots[i].fuel > 0 &&
-						!(*state).robots[i].is_disassembled)
+						(*state).robots[i].fuel > 0)
 					{
-						alive_enemies++;
+						if (!(*state).robots[i].is_disassembled)
+						{
+							alive_enemies++;
+							continue;
+						}
+						RobotVisual *rv = &renderer->visuals[i];
+						Animation *anim = &renderer->disassembly_anims[i];
+						/* Robots that are actively animating their disassembly should be counted as
+						   alive so that we get to see the animation before going to the next level. */
+						if (!rv->disassembled || (rv->disassembled && !anim->finished))
+						{
+							alive_enemies++;
+						}
 					}
 				}
 
@@ -223,7 +234,7 @@ int main(void)
 					// Initialize NEW game state
 					free_state(state);
 
-					state = generate_world(10, 8, 4);
+					state = generate_world(DEFAULT_WORLD_WIDTH, DEFAULT_WORLD_HEIGHT, DEFAULT_ROBOT_COUNT);
 					(*renderer).level = next_level;
 					renderer_sync_visuals(renderer, state);
 				}

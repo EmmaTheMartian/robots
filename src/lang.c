@@ -215,6 +215,8 @@ void eval_ins(State *state, LangContext *ctx, Renderer *renderer, struct rbt_ins
 
 	log("&state(%p)->robots[ctx->robot(%d)] = %p\n", state, ctx->robot, r);
 
+	robot_use_fuel(r, 1);
+
 	// print_ins(ins);
 	switch (ins.op)
 	{
@@ -255,9 +257,16 @@ void eval_ins(State *state, LangContext *ctx, Renderer *renderer, struct rbt_ins
 		robot_visual_rotate_to(rv, r->dir);
 		break;
 	case rbt_op_refuel:
-		if (get_tile(state->world, r->x, r->y) == 0) /* todo: replace 0 with a tile ID */
-			robot_refuel(r, 100); /* todo: `100` is totally arbitrary. */
+		{
+		int *tile = get_tile(state->world, r->x, r->y);
+		if (*tile == TILE_ENERGY)
+		{
+			robot_refuel(r, 25);
+			*tile = TILE_EMPTY;
+			play_sfx(SFX_REFUELING);
+		}
 		break;
+		}
 	case rbt_op_ram:
 		{
 		// target position to ram
@@ -278,7 +287,7 @@ void eval_ins(State *state, LangContext *ctx, Renderer *renderer, struct rbt_ins
 			robot_disassemble(enemy);
 
 			robot_visual_ram(rv, (*r).dir);
-			
+
 			RobotVisual *v = renderer_get_visual(renderer, target_idx);
 			robot_visual_disassemble(v, &renderer->disassembly_anims[target_idx]);
 			play_sfx(SFX_DISASSEMBLED);

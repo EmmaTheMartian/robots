@@ -63,6 +63,9 @@ State *generate_world(int width, int height, int robot_count)
 		robot_count = MAX_ROBOTS;
 	}
 
+    for (int i = 0 ; i < MAX_ROBOTS ; i++)
+        state->robots[i] = (Robot){0}; /* initialize robots to zero */
+
 	for (int i = 0; i < robot_count; i++)
 	{
 		int x, y;
@@ -219,7 +222,7 @@ bool robot_forward(World *w, Robot *r)
             // do nothing
     }
 
-    if (is_tile_free(w, x, y))
+    if (*get_tile(w, x, y) != TILE_WALL)
     {
         r->x = x;
         r->y = y;
@@ -264,7 +267,7 @@ bool robot_backward(World *w, Robot *r)
             // do nothing
     }
 
-    if (is_tile_free(w, x, y))
+    if (*get_tile(w, x, y) != TILE_WALL)
     {
         r->x = x;
         r->y = y;
@@ -379,7 +382,6 @@ int robot_scan(Robot *r, World *w)
 */
 void robot_disassemble(Robot *r)
 {
-    (*r).fuel = 0;
     (*r).is_disassembled = true;
 }
 

@@ -366,7 +366,7 @@ void draw_hud(State *state, int fuel, int enemy_count, int level)
 	int y = 2;  // At top of screen
 
 	// Build status line and center it
-	snprintf(buffer, sizeof(buffer), "Fuel: %d  Enemies: %d  Level: %d", fuel, enemy_count, level);
+	snprintf(buffer, sizeof(buffer), "Fuel: %d/%d  Enemies: %d  Level: %d", fuel, MAX_FUEL, enemy_count, level);
 	int text_width = MeasureText(buffer, font_size);
 	int x = (VIRTUAL_WIDTH - text_width) / 2;
 	DrawText(buffer, x, y, font_size, WHITE);

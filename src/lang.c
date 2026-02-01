@@ -7,6 +7,7 @@
 #include <lang.h>
 #include <rendering.h>
 #include <audio.h>
+#include <common.h>
 
 
 #ifndef LANG_ARGBUFSIZ
@@ -198,27 +199,6 @@ int eval_val(LangContext *ctx, char *val)
 }
 
 static
-int find_robot_pos(State *state, int x, int y)
-{
-	for (int i = 0; i < (*state).robot_count; i++)
-	{
-		Robot *rr = &state->robots[i];
-
-		if ((*rr).fuel > 0 &&
-			!(*rr).is_disassembled &&
-			(*rr).x == x &&
-			(*rr).y == y)
-		{
-			// return index of the alive robot
-			return i;
-		}
-	}
-
-	// robot not found
-	return -1;
-}
-
-static
 void eval_ins(State *state, LangContext *ctx, Renderer *renderer, struct rbt_instruction ins)
 {
 	if (!ctx->_renderer)
@@ -248,8 +228,8 @@ void eval_ins(State *state, LangContext *ctx, Renderer *renderer, struct rbt_ins
 	case rbt_op_backward:
 		{
 		bool moved = (ins.op == rbt_op_forward) ?
-			robot_forward(state->world, r) :
-			robot_backward(state->world, r);
+			robot_forward(state, r) :
+			robot_backward(state, r);
 		if (moved)
 		{
 			robot_visual_move_to(rv, r->x, r->y);

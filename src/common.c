@@ -174,7 +174,6 @@ bool is_tile_free(World *w, int x, int y)
 	return *get_tile(w, x, y) == TILE_EMPTY;
 }
 
-
 /* Make a new robot
  * Input/Pre-Condition: Need to know if the robot is a player or not
  * Output/Post-Condition: Will return a Robot with the default values
@@ -194,7 +193,7 @@ Robot new_robot(bool is_player, int x, int y, Direction dir)
  * Input/Pre-Condition: Needs the Robot that's moving
  * Output/Post-Condition: The Robot's x & y position will get updated based on the Direction its facing
 */
-bool robot_forward(World *w, Robot *r)
+bool robot_forward(State *state, Robot *r)
 {
     // get the Robot's current facing direction
     Direction current_dir = (*r).dir;
@@ -225,7 +224,10 @@ bool robot_forward(World *w, Robot *r)
             // do nothing
     }
 
-    if (*get_tile(w, x, y) != TILE_WALL)
+    if (find_robot_pos(state, x, y) != -1)
+        return false;
+
+    if (*get_tile(state->world, x, y) != TILE_WALL)
     {
         r->x = x;
         r->y = y;
@@ -239,7 +241,7 @@ bool robot_forward(World *w, Robot *r)
  * Input/Pre-Condition: Needs the Robot that's moving
  * Output/Post-Condition: The Robot's x & y position will get updated based on the Direction its facing
 */
-bool robot_backward(World *w, Robot *r)
+bool robot_backward(State *state, Robot *r)
 {
     // get the Robot's current facing direction
     Direction current_dir = (*r).dir;
@@ -270,7 +272,10 @@ bool robot_backward(World *w, Robot *r)
             // do nothing
     }
 
-    if (*get_tile(w, x, y) != TILE_WALL)
+    if (find_robot_pos(state, x, y) != -1)
+        return false;
+
+    if (*get_tile(state->world, x, y) != TILE_WALL)
     {
         r->x = x;
         r->y = y;
@@ -417,4 +422,25 @@ bool robot_use_fuel(Robot *r, int amount)
 
     // return whether it's out or not
     return ((*r).fuel > 0);
+}
+
+
+int find_robot_pos(State *state, int x, int y)
+{
+	for (int i = 0; i < (*state).robot_count; i++)
+	{
+		Robot *rr = &state->robots[i];
+
+		if ((*rr).fuel > 0 &&
+			!(*rr).is_disassembled &&
+			(*rr).x == x &&
+			(*rr).y == y)
+		{
+			// return index of the alive robot
+			return i;
+		}
+	}
+
+	// robot not found
+	return -1;
 }

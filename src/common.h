@@ -12,7 +12,7 @@
 #define MAX_FUEL 50
 #define FUEL_CANISTER_AMOUNT 25
 #define MAX_ROBOTS 16
-#define EXEC_SPEED_SECONDS (0.25f)
+#define EXEC_SPEED_SECONDS (0.50f)
 #define EXEC_SPEED ((int)(EXEC_SPEED_SECONDS*60)) /* frames per statement executed */
 
 // World generation constants
@@ -61,9 +61,10 @@ typedef struct
 	bool is_disassembled;
 } Robot;
 
+typedef struct rbt_state State;
 Robot new_robot(bool is_player, int x, int y, Direction dir);
-bool robot_forward(World *w, Robot *r);
-bool robot_backward(World *w, Robot *r);
+bool robot_forward(State *w, Robot *r);
+bool robot_backward(State *w, Robot *r);
 void robot_turn_left(Robot *r);
 void robot_turn_right(Robot *r);
 void robot_refuel(Robot *r, int fuel_amount);
@@ -74,7 +75,7 @@ bool robot_use_fuel(Robot *r, int amount);
 
 
 typedef struct rbt_stepper LangStepper;
-typedef struct
+typedef struct rbt_state
 {
 	World *world;
 	Robot robots[MAX_ROBOTS];
@@ -85,5 +86,7 @@ typedef struct
 
 State *generate_world(long seed, int width, int height, int robot_count);
 void free_state(State *state);
+
+int find_robot_pos(State *state, int x, int y);
 
 #endif

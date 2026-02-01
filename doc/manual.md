@@ -55,6 +55,15 @@ Comments are indicated by placing a semicolon at the start
 of a line. You cannot place comments on the same line as a
 statement.
 
+<img alt="Screenshot of Rapid Disassembly in-game" src="screenshot.png" width=350 />
+
+In the above image, you can see all of the game's controls
+and stats pertaining to the current level. The blue robot
+is your robot, which is pointing south in this image.
+
+Fuel canisters are the 2 cylinders on the map. The grey
+squares are walls. Everything else is fair game!
+
 ## §2: Registers
 
 Robots are only capable of remembering up to 16 values,

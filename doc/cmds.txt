@@ -1,0 +1,37 @@
+print [val]
+forward [amount]
+backward [amount]
+turn [right or left]
+refuel
+ram
+scan [destination register]
+run [function]
+if [value] [op] [value] then [statement]
+set [register] [value]
+
+---
+
+fn refuel
+	forward 5
+	turn right
+	forward 4
+	turn right
+	forward 3
+	refuel
+	backward 3
+	turn left
+	backward 4
+	turn left
+	backward 5
+	turn left
+	turn left
+end
+
+fn attack
+	backward 1
+	ram
+end
+
+run refuel
+scan $1
+if $1 == robot then run attack

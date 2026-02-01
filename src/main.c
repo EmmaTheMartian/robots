@@ -163,6 +163,32 @@ int main(void)
 				}
 
 				// TODO: Check for level complete condition
+				int alive_enemies = 0;
+
+				// count alive enemies
+				for (int i = 0; i < (*state).robot_count; i++)
+				{
+					if (!(*state).robots[i].is_player &&
+						(*state).robots[i].fuel > 0 &&
+						!(*state).robots[i].is_disassembled)
+					{
+						alive_enemies++;
+					}
+				}
+
+				// player has won the level
+				if (alive_enemies == 0)
+				{
+					// go to the next level
+					int next_level = (*renderer).level + 1;
+
+					// Initialize NEW game state
+					free_state(state);
+
+					state = generate_world(10, 8, 4);
+					(*renderer).level = next_level;
+					renderer_sync_visuals(renderer, state);
+				}
 
 				renderer_render(renderer, state);
 			}

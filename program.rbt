@@ -1,9 +1,1 @@
-fn a
-	forward
-	turn right
-end
-
-run a
-run a
-run a
-run a
+refill

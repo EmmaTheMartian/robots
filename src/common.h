@@ -9,7 +9,8 @@
 #define TILE_WALL 1
 #define TILE_ENERGY 2
 
-#define MAX_FUEL 100
+#define MAX_FUEL 50
+#define FUEL_CANISTER_AMOUNT 25
 #define MAX_ROBOTS 16
 #define EXEC_SPEED_SECONDS (1.0f)
 #define EXEC_SPEED ((int)(EXEC_SPEED_SECONDS*60)) /* frames per statement executed */

@@ -261,7 +261,7 @@ void eval_ins(State *state, LangContext *ctx, Renderer *renderer, struct rbt_ins
 		int *tile = get_tile(state->world, r->x, r->y);
 		if (*tile == TILE_ENERGY)
 		{
-			robot_refuel(r, 25);
+			robot_refuel(r, FUEL_CANISTER_AMOUNT);
 			*tile = TILE_EMPTY;
 			play_sfx(SFX_REFUELING);
 		}

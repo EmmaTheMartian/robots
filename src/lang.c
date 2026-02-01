@@ -187,6 +187,27 @@ int eval_val(LangContext *ctx, char *val)
 }
 
 static
+int find_robot_pos(State *state, int x, int y)
+{
+	for (int i = 0; i < (*state).robot_count; i++)
+	{
+		Robot *rr = &state->robots[i];
+
+		if ((*rr).fuel > 0 &&
+			!(*rr).is_disassembled &&
+			(*rr).x == x &&
+			(*rr).y == y)
+		{
+			// return index of the alive robot
+			return i;
+		}
+	}
+
+	// robot not found
+	return -1;
+}
+
+static
 void eval_ins(State *state, LangContext *ctx, Renderer *renderer, struct rbt_instruction ins)
 {
 	Robot *r = &state->robots[ctx->robot];
@@ -238,7 +259,32 @@ void eval_ins(State *state, LangContext *ctx, Renderer *renderer, struct rbt_ins
 			robot_refuel(r, 100); /* todo: `100` is totally arbitrary. */
 		break;
 	case rbt_op_ram:
-		break; /* todo */
+		{
+		// target position to ram
+		int tx = (*r).x, ty = (*r).y;
+		switch ((*r).dir)
+		{
+			case North: ty--; break;
+			case East: tx++; break;
+			case South: ty++; break;
+			case West: tx--; break;
+		}
+
+		int target_idx = find_robot_pos(state, tx, ty);
+
+		if (target_idx != -1 && !(*state).robots[target_idx].is_player)
+		{
+			Robot *enemy = &state->robots[target_idx];
+			robot_disassemble(enemy);
+
+			robot_visual_ram(rv, (*r).dir);
+			
+			RobotVisual *v = renderer_get_visual(renderer, target_idx);
+			robot_visual_disassemble(v, &renderer->disassembly_anims[target_idx]);
+			play_sfx(SFX_DISASSEMBLED);
+		}
+		break;
+		}
 	case rbt_op_scan:
 		{
 		int *reg = get_reg(ctx, ins.args[0]);

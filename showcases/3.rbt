@@ -1,4 +1,4 @@
-;args; -S -s 3 -r 6 -w 12 -h 10 -f
+;args; -r 6 -w 12 -h 10 -f
 
 ; Perform an about rotation
 fn about_face

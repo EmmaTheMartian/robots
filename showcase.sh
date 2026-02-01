@@ -12,6 +12,7 @@ showcase() {
 	fi
 	base=$(basename $1)
 	id="${base%.rbt}"
+	args="$args -S -s $id"
 	echo "showcase: $id: $args"
 	./robots $args &
 }

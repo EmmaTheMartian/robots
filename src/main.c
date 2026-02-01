@@ -94,11 +94,7 @@ int main(void)
 	Texture2D title_texture = LoadTexture("assets/title.png");
 	Texture2D gameover_texture = LoadTexture("assets/gameover.png");
 
-	State state = {0};
-	LangContext ctx = new_context();
-
-	char *program = read_program();
-	if (program)
+	while (!WindowShouldClose())
 	{
 		update_music();
 

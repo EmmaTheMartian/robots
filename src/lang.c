@@ -33,8 +33,8 @@ enum rbt_const
 	rbt_const_south,
 	rbt_const_east,
 	rbt_const_west,
-	rbt_const_left,
-	rbt_const_right,
+	rbt_const_ccw,
+	rbt_const_cw,
 };
 
 
@@ -73,8 +73,8 @@ char *rbt_consttos[] =
 	"south",
 	"east",
 	"west",
-	"left",
-	"right",
+	"ccw",
+	"cw",
 	NULL,
 };
 
@@ -91,7 +91,7 @@ struct rbt_opinfo rbt_ops[] =
 	[rbt_op_print]    = { .argc=1, .usage="print [VALUE]" },
 	[rbt_op_forward]  = { .argc=0, .usage="forward" },
 	[rbt_op_backward] = { .argc=0, .usage="backward" },
-	[rbt_op_turn]     = { .argc=1, .usage="turn left|right" },
+	[rbt_op_turn]     = { .argc=1, .usage="turn cw|ccw" },
 	[rbt_op_refuel]   = { .argc=0, .usage="refuel" },
 	[rbt_op_ram]      = { .argc=0, .usage="ram" },
 	[rbt_op_scan]     = { .argc=1, .usage="scan REGISTER" },
@@ -221,13 +221,13 @@ void eval_ins(State *state, LangContext *ctx, Renderer *renderer, struct rbt_ins
 		}
 		break;
 	case rbt_op_turn:
-		if (eval_val(ctx, ins.args[0]) == rbt_const_left)
+		if (eval_val(ctx, ins.args[0]) == rbt_const_ccw)
 			robot_turn_left(r);
-		else if (eval_val(ctx, ins.args[0]) == rbt_const_right)
+		else if (eval_val(ctx, ins.args[0]) == rbt_const_cw)
 			robot_turn_right(r);
 		else
 		{
-			panic(ctx, "turn expects argument to be either `left` or `right`.");
+			panic(ctx, "turn expects argument to be either `ccw` or `cw`.");
 			break;
 		}
 		play_sfx(SFX_ROTATING);

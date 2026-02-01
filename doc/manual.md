@@ -65,8 +65,8 @@ There are 6 constants available in RSL:
 | `wall`  | Used by [scan](#4.1-scan) to indicate wall tiles. |
 | `robot` | Used by [scan](#4.1-scan) to indicate robots. |
 | `fuel`  | Used by [scan](#4.1-scan) to indicate fuel canisters. |
-| `right` | Used with [turn](#4.2-turn) to turn right (clockwise, from above). |
-| `left`  | Used with [turn](#4.2-turn) to turn left (counter-clockwise, from above). |
+| `cw`    | Used with [turn](#4.2-turn) to turn clockwise, from above. |
+| `ccw`   | Used with [turn](#4.2-turn) to turn counter-clockwise, from above. |
 
 ## §4: Operations
 
@@ -84,12 +84,12 @@ Move the robot backward one tile, if able.
 
 ### §4.3: Turn
 
-**Usage:** `turn left|right`
+**Usage:** `turn cw|ccw`
 
-Rotate the robot right or left, relative to its perspective.
+Rotate the robot.
 
-From above, a `turn right` will rotate the robot clockwise
-whereas a `turn left` will rotate the robot counter-clockwise.
+From above, a `turn cw` will rotate the robot clockwise
+whereas a `turn ccw` will rotate the robot counter-clockwise.
 
 ### §4.4: Refuel
 

@@ -1,6 +1,7 @@
 #include <rendering.h>
 #include <common.h>
 #include <lang.h>
+#include <ui.h>
 #include <math.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -360,26 +361,24 @@ void render_robots(State *state, RobotVisual *visuals, Animation *player_anim, A
 
 void draw_hud(State *state, int fuel, int enemy_count, int level)
 {
-	char buffer[32];
-	int font_size = 8;
-	int y = 130;  // Below the 128px world area
+	char buffer[64];
+	int font_size = HUD_FONT_SIZE;
+	int y = 2;  // At top of screen
 
-	snprintf(buffer, sizeof(buffer), "Fuel: %d", fuel);
-	DrawText(buffer, 2, y, font_size, WHITE);
-
-	snprintf(buffer, sizeof(buffer), "Enemies: %d", enemy_count);
-	DrawText(buffer, 55, y, font_size, WHITE);
-
-	snprintf(buffer, sizeof(buffer), "Level: %d", level);
-	DrawText(buffer, 120, y, font_size, WHITE);
-
-	y += font_size + 2;
+	// Build status line and center it
+	snprintf(buffer, sizeof(buffer), "Fuel: %d  Enemies: %d  Level: %d", fuel, enemy_count, level);
+	int text_width = MeasureText(buffer, font_size);
+	int x = (VIRTUAL_WIDTH - text_width) / 2;
+	DrawText(buffer, x, y, font_size, WHITE);
 
 	if (state->program_running)
+	{
 		snprintf(buffer, sizeof(buffer), "Step: %d", state->stepper->n);
-	else
-		snprintf(buffer, sizeof(buffer), "[Space] to start/stop code.");
-	DrawText(buffer, 2, y, font_size, WHITE);
+		text_width = MeasureText(buffer, font_size);
+		// Draw step counter centered below the status line
+		x = (VIRTUAL_WIDTH - text_width) / 2;
+		DrawText(buffer, x, y + font_size + 1, font_size, WHITE);
+	}
 }
 
 Renderer *init_renderer(void)
@@ -388,12 +387,12 @@ Renderer *init_renderer(void)
 
 	r->target = init_render_target();
 	r->tileset = load_tileset("assets/tiles.png");
-	r->player_anim = load_animation("assets/robot.gif", 10, true);
-	r->enemy_anim = load_animation("assets/enemy.gif", 10, true);
+	r->player_anim = load_animation("assets/robot.gif", ANIM_FPS_ROBOT, true);
+	r->enemy_anim = load_animation("assets/enemy.gif", ANIM_FPS_ROBOT, true);
 
 	for (int i = 0; i < MAX_ROBOTS; i++)
 	{
-		r->disassembly_anims[i] = load_animation("assets/rapid_disassembly.gif", 15, false);
+		r->disassembly_anims[i] = load_animation("assets/rapid_disassembly.gif", ANIM_FPS_DISASSEMBLY, false);
 	}
 
 	r->level = 1;
@@ -405,6 +404,14 @@ Renderer *init_renderer(void)
 	{
 		r->fog_map[i] = false;
 	}
+
+	// Initialize buttons - positioned at bottom of HUD area
+	int start_x = (VIRTUAL_WIDTH - (BTN_WIDTH * BTN_COUNT + BTN_GAP * (BTN_COUNT - 1))) / 2;
+
+	button_init(&r->buttons[BTN_EXECUTE], start_x, BTN_Y, BTN_WIDTH, BTN_HEIGHT, "Execute");
+	button_init(&r->buttons[BTN_RESET], start_x + (BTN_WIDTH + BTN_GAP), BTN_Y, BTN_WIDTH, BTN_HEIGHT, "Reset");
+	button_init(&r->buttons[BTN_FOG], start_x + (BTN_WIDTH + BTN_GAP) * 2, BTN_Y, BTN_WIDTH, BTN_HEIGHT, "Add Fog");
+	button_init(&r->buttons[BTN_QUIT], start_x + (BTN_WIDTH + BTN_GAP) * 3, BTN_Y, BTN_WIDTH, BTN_HEIGHT, "Quit");
 
 	return r;
 }
@@ -449,7 +456,7 @@ void renderer_update(Renderer *r, State *state, float speed)
 	}
 
 	// Update fog scroll (slow scroll to the left)
-	r->fog_scroll += 0.2f;
+	r->fog_scroll += FOG_SCROLL_SPEED;
 	if (r->fog_scroll >= TILE_SIZE)
 	{
 		r->fog_scroll -= TILE_SIZE;
@@ -460,9 +467,13 @@ void renderer_render(Renderer *r, State *state)
 {
 	begin_virtual_drawing(r->target);
 
-	render_world(&r->tileset, state->world, 0, 0);
-	render_robots(state, r->visuals, &r->player_anim, &r->enemy_anim, 0, 0);
-	render_fog(r, state->world, 0, 0);
+	int offset_x = (VIRTUAL_WIDTH - state->world->width * TILE_SIZE) / 2;
+	// Center world between top text and buttons
+	int world_height = state->world->height * TILE_SIZE;
+	int offset_y = HUD_TOP_MARGIN + (BTN_Y - HUD_TOP_MARGIN - world_height) / 2;
+	render_world(&r->tileset, state->world, offset_x, offset_y);
+	render_robots(state, r->visuals, &r->player_anim, &r->enemy_anim, offset_x, offset_y);
+	render_fog(r, state->world, offset_x, offset_y);
 
 	// Calculate enemy count for HUD
 	int enemy_count = 0;
@@ -481,6 +492,12 @@ void renderer_render(Renderer *r, State *state)
 
 	int fuel = player ? player->fuel : 0;
 	draw_hud(state, fuel, enemy_count, r->level);
+
+	// Draw buttons
+	for (int i = 0; i < BTN_COUNT; i++)
+	{
+		button_draw(&r->buttons[i]);
+	}
 
 	/* Debug information */
 	#if DEBUG_GAME
@@ -563,7 +580,7 @@ static void render_fog(Renderer *r, World *w, int screen_x, int screen_y)
 			Rectangle fog_src2 = { 0, 0, scroll_offset, TILE_SIZE };
 			Vector2 fog_pos2 = { px + TILE_SIZE - scroll_offset, py };
 
-			Color fog_color = { 255, 255, 255, 180 }; // Semi-transparent
+			Color fog_color = { 255, 255, 255, FOG_ALPHA };
 			DrawTextureRec(r->fog_texture, fog_src1, fog_pos1, fog_color);
 			if (scroll_offset > 0)
 			{
@@ -571,4 +588,19 @@ static void render_fog(Renderer *r, World *w, int screen_x, int screen_y)
 			}
 		}
 	}
+}
+
+void renderer_update_buttons(Renderer *r)
+{
+	float scale = (float)SCREEN_WIDTH / (float)VIRTUAL_WIDTH;
+	for (int i = 0; i < BTN_COUNT; i++)
+	{
+		button_update(&r->buttons[i], scale);
+	}
+}
+
+bool renderer_button_clicked(Renderer *r, int button_id)
+{
+	if (button_id < 0 || button_id >= BTN_COUNT) return false;
+	return button_clicked(&r->buttons[button_id]);
 }

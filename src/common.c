@@ -1,5 +1,4 @@
 #include <stdlib.h>
-#include <stdlib.h>
 #include <time.h>
 #include <common.h>
 #include <lang.h>
@@ -36,9 +35,9 @@ State *generate_world(int width, int height, int robot_count)
 		*get_tile(state->world, width - 1, y) = TILE_WALL;
 	}
 
-	// Scatter some random walls (about 10% of interior)
+	// Scatter some random walls
 	int interior_tiles = (width - 2) * (height - 2);
-	int wall_count = interior_tiles / 10;
+	int wall_count = interior_tiles / WALL_DIVISOR;
 	for (int i = 0; i < wall_count; i++)
 	{
 		int x = 1 + rand() % (width - 2);
@@ -46,8 +45,8 @@ State *generate_world(int width, int height, int robot_count)
 		*get_tile(state->world, x, y) = TILE_WALL;
 	}
 
-	// Scatter some energy pickups (about 5% of interior)
-	int energy_count = interior_tiles / 20;
+	// Scatter some energy pickups
+	int energy_count = interior_tiles / ENERGY_DIVISOR;
 	for (int i = 0; i < energy_count; i++)
 	{
 		int x = 1 + rand() % (width - 2);
@@ -68,14 +67,29 @@ State *generate_world(int width, int height, int robot_count)
 	{
 		int x, y;
 		int attempts = 0;
+		bool position_valid;
 		do
 		{
 			x = 1 + rand() % (width - 2);
 			y = 1 + rand() % (height - 2);
 			attempts++;
-		} while (!is_tile_free(state->world, x, y) && attempts < 100);
 
-		if (attempts < 100)
+			// Check if tile is free and no robot is already there
+			position_valid = is_tile_free(state->world, x, y);
+			if (position_valid)
+			{
+				for (int j = 0; j < state->robot_count; j++)
+				{
+					if (state->robots[j].x == x && state->robots[j].y == y)
+					{
+						position_valid = false;
+						break;
+					}
+				}
+			}
+		} while (!position_valid && attempts < MAX_PLACEMENT_ATTEMPTS);
+
+		if (attempts < MAX_PLACEMENT_ATTEMPTS)
 		{
 			Direction dir = rand() % 4;
 			Robot r = new_robot(i == 0, x, y, dir);

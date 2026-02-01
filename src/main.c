@@ -1,6 +1,5 @@
 #include <stdlib.h>
 #include <raylib.h>
-#include <stdlib.h>
 #include <common.h>
 #include <rendering.h>
 #include <audio.h>
@@ -92,11 +91,12 @@ int main(void)
 	State *state = NULL;
 	GameState game_state = GAME_TITLE;
 	unsigned long frame = 0, program_frame = 0;
+	bool running = true;
 
 	Texture2D title_texture = LoadTexture("assets/title.png");
 	Texture2D gameover_texture = LoadTexture("assets/gameover.png");
 
-	while (!WindowShouldClose())
+	while (running && !WindowShouldClose())
 	{
 		frame++;
 
@@ -106,15 +106,15 @@ int main(void)
 		{
 			case GAME_TITLE:
 			{
-				// Any key advances to game
-				if (GetKeyPressed() != 0)
+				// Any key or click advances to game
+				if (GetKeyPressed() != 0 || IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
 				{
 					// Initialize game state
 					if (state != NULL)
 					{
 						free_state(state);
 					}
-					state = generate_world(10, 8, 4);
+					state = generate_world(DEFAULT_WORLD_WIDTH, DEFAULT_WORLD_HEIGHT, DEFAULT_ROBOT_COUNT);
 					renderer_sync_visuals(renderer, state);
 
 					play_sfx(SFX_AWAITING_INSTRUCTIONS);
@@ -129,7 +129,8 @@ int main(void)
 
 			case GAME_PLAYING:
 			{
-				renderer_update(renderer, state, 2.0f);
+				renderer_update(renderer, state, ANIM_SPEED);
+				renderer_update_buttons(renderer);
 
 #ifdef RENDER_TEST
 				render_test_logic(renderer, state);
@@ -146,12 +147,33 @@ int main(void)
 					program_frame = 0;
 				}
 
-				if (IsKeyPressed(KEY_SPACE))
+				// Handle button clicks
+				if (renderer_button_clicked(renderer, BTN_EXECUTE))
 				{
 					state->program_running = !state->program_running;
 					if (state->program_running)
 						stepper_reload(state->stepper);
 					program_frame = 0;
+				}
+
+				if (renderer_button_clicked(renderer, BTN_RESET))
+				{
+					// Reset level - regenerate with same parameters
+					free_state(state);
+					state = generate_world(DEFAULT_WORLD_WIDTH, DEFAULT_WORLD_HEIGHT, DEFAULT_ROBOT_COUNT);
+					renderer_sync_visuals(renderer, state);
+					renderer_clear_fog(renderer);
+					play_sfx(SFX_AWAITING_INSTRUCTIONS);
+				}
+
+				if (renderer_button_clicked(renderer, BTN_FOG))
+				{
+					renderer_fill_fog(renderer, state->world);
+				}
+
+				if (renderer_button_clicked(renderer, BTN_QUIT))
+				{
+					running = false;
 				}
 
 				// Check for game over condition
@@ -170,8 +192,8 @@ int main(void)
 
 			case GAME_OVER:
 			{
-				// Any key returns to title
-				if (GetKeyPressed() != 0)
+				// Any key or click returns to title
+				if (GetKeyPressed() != 0 || IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
 				{
 					game_state = GAME_TITLE;
 				}

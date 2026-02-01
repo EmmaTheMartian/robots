@@ -43,7 +43,12 @@ typedef struct
 	bool is_player;
 } Robot;
 
+<<<<<<< HEAD
+
+Robot new_robot(bool is_player);
+=======
 Robot new_robot(bool is_player, int x, int y, Direction dir);
+>>>>>>> main
 void robot_forward(Robot *r);
 void robot_backward(Robot *r);
 void robot_turn_left(Robot *r);

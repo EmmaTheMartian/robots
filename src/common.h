@@ -12,7 +12,7 @@
 #define MAX_FUEL 50
 #define FUEL_CANISTER_AMOUNT 25
 #define MAX_ROBOTS 16
-#define EXEC_SPEED_SECONDS (0.65f)
+#define EXEC_SPEED_SECONDS (0.25f)
 #define EXEC_SPEED ((int)(EXEC_SPEED_SECONDS*60)) /* frames per statement executed */
 
 // World generation constants
@@ -83,7 +83,7 @@ typedef struct
 	bool program_running;
 } State;
 
-State *generate_world(int width, int height, int robot_count);
+State *generate_world(long seed, int width, int height, int robot_count);
 void free_state(State *state);
 
 #endif

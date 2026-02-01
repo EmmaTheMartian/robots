@@ -18,13 +18,12 @@
 # define LANG_ERRORBUFSIZ 2048
 #endif
 
-#ifndef LANG_PROGRAMPATH
-# define LANG_PROGRAMPATH "program.rbt"
-#endif
-
 #ifndef LANG_MAXARGC
 # define LANG_MAXARGC 4
 #endif
+
+
+extern char *DEFAULT_PROGRAM_PATH;
 
 
 typedef enum rbt_errcode
@@ -104,7 +103,7 @@ typedef struct rbt_stepper
 } LangStepper;
 
 /* Read local program.rbt. */
-char *read_program(void);
+char *read_program(char *path);
 
 /* Create a stepper to interpret the code line-by-line. */
 LangStepper *make_stepper(int robot_id, char *program);

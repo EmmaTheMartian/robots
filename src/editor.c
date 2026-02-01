@@ -33,7 +33,7 @@ void editor_init(Editor *e, int x, int y, int width, int height)
 
 void editor_open(Editor *e)
 {
-	char *program = read_program();
+	char *program = read_program(DEFAULT_PROGRAM_PATH);
 	if (program)
 	{
 		strncpy(e->program, program, EDITOR_MAX_TEXT - 1);
@@ -187,7 +187,7 @@ int editor_update(Editor *e, float scale)
 	// Check Save - write to file and close
 	if (button_clicked(&e->buttons[EDITOR_BTN_SAVE]))
 	{
-		FILE *fp = fopen(LANG_PROGRAMPATH, "w");
+		FILE *fp = fopen(DEFAULT_PROGRAM_PATH, "w");
 		if (fp)
 		{
 			fprintf(fp, "%s", e->program);
@@ -236,7 +236,7 @@ void editor_draw(Editor *e)
 	DrawRectangleLines(e->x, e->y, e->width, e->height, EDITOR_BORDER);
 
 	// Title
-	const char *title = "program.rbt";
+	const char *title = DEFAULT_PROGRAM_PATH;
 	int title_w = MeasureText(title, EDITOR_FONT_SIZE);
 	DrawText(title, e->x + (e->width - title_w) / 2, e->y + 2, EDITOR_FONT_SIZE, EDITOR_BORDER);
 

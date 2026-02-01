@@ -1,4 +1,6 @@
 #include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 #include <raylib.h>
 #include <common.h>
 #include <rendering.h>
@@ -19,6 +21,7 @@ typedef enum
 
 static void init_window(void)
 {
+	SetTraceLogLevel(LOG_WARNING);
 	InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Rapid Disassembly");
 	SetTargetFPS(60);
 }
@@ -82,7 +85,15 @@ static void draw_gameover_screen(Renderer *renderer, Texture2D *texture)
 	end_virtual_drawing(renderer->target);
 }
 
-int main(void)
+static void fill_fog(Renderer *renderer, State *state)
+{
+	renderer_fill_fog(renderer, state->world);
+	for (int dy = -1; dy <= 1; dy++)
+		for (int dx = -1; dx <= 1; dx++)
+			renderer_set_fog(renderer, state->robots[0].x + dx, state->robots[0].y + dy, false);
+}
+
+int main(int argc, char *argv[])
 {
 	init_window();
 	init_sound();
@@ -91,10 +102,46 @@ int main(void)
 	State *state = NULL;
 	GameState game_state = GAME_TITLE;
 	unsigned long frame = 0, program_frame = 0;
-	bool running = true;
+	bool running = true, showcase = false, foggy = false;
+	long seed = -1;
+	int width = DEFAULT_WORLD_WIDTH, height = DEFAULT_WORLD_HEIGHT, robot_count = DEFAULT_ROBOT_COUNT;
+
+	for (int i = 1 ; i < argc ; i++)
+	{
+		if (strcmp(argv[i], "--seed") == 0 || strcmp(argv[i], "-s") == 0)
+			seed = strtol(argv[++i], NULL, 10);
+		else if (strcmp(argv[i], "--showcase") == 0 || strcmp(argv[i], "-S") == 0)
+			showcase = true;
+		else if (strcmp(argv[i], "--program") == 0 || strcmp(argv[i], "-p") == 0)
+			DEFAULT_PROGRAM_PATH = argv[++i];
+		else if (strcmp(argv[i], "--width") == 0 || strcmp(argv[i], "-w") == 0)
+			width = strtol(argv[++i], NULL, 10);
+		else if (strcmp(argv[i], "--height") == 0 || strcmp(argv[i], "-h") == 0)
+			height = strtol(argv[++i], NULL, 10);
+		else if (strcmp(argv[i], "--nrobots") == 0 || strcmp(argv[i], "-r") == 0)
+			robot_count = strtol(argv[++i], NULL, 10);
+		else if (strcmp(argv[i], "--foggy") == 0 || strcmp(argv[i], "-f") == 0)
+			foggy = true;
+		else
+		{
+			fprintf(stderr, "error: unrecognized option: %s\n", argv[i]);
+			exit(1);
+		}
+	}
 
 	Texture2D title_texture = LoadTexture("assets/title.png");
 	Texture2D gameover_texture = LoadTexture("assets/gameover.png");
+
+	if (showcase)
+	{
+		state = generate_world(seed, width, height, robot_count);
+		renderer_sync_visuals(renderer, state);
+		game_state = GAME_PLAYING;
+		state->program_running = true;
+		stepper_reload(state->stepper);
+		if (foggy)
+			fill_fog(renderer, state);
+	}
 
 	while (running && !WindowShouldClose())
 	{
@@ -114,7 +161,9 @@ int main(void)
 					{
 						free_state(state);
 					}
-					state = generate_world(DEFAULT_WORLD_WIDTH, DEFAULT_WORLD_HEIGHT, DEFAULT_ROBOT_COUNT);
+					state = generate_world(seed, width, height, robot_count);
+					if (foggy)
+						fill_fog(renderer, state);
 					renderer_sync_visuals(renderer, state);
 
 					play_sfx(SFX_AWAITING_INSTRUCTIONS);
@@ -175,10 +224,19 @@ int main(void)
 				{
 					// Reset level - regenerate with same parameters
 					free_state(state);
-					state = generate_world(DEFAULT_WORLD_WIDTH, DEFAULT_WORLD_HEIGHT, DEFAULT_ROBOT_COUNT);
-					renderer_sync_visuals(renderer, state);
+					state = generate_world(showcase ? seed : -1, width, height, robot_count);
 					renderer_clear_fog(renderer);
+					if (foggy)
+						fill_fog(renderer, state);
+					renderer_sync_visuals(renderer, state);
 					play_sfx(SFX_AWAITING_INSTRUCTIONS);
+
+					if (showcase)
+					{
+						state->program_running = true;
+						stepper_reload(state->stepper);
+						program_frame = 0;
+					}
 				}
 
 				if (renderer_button_clicked(renderer, BTN_EDIT))
@@ -228,15 +286,33 @@ int main(void)
 				// player has won the level
 				if (alive_enemies == 0)
 				{
-					// go to the next level
-					int next_level = (*renderer).level + 1;
+					if (showcase)
+					{
+						free_state(state);
+						state = generate_world(seed, width, height, robot_count);
+						renderer_clear_fog(renderer);
+						if (foggy)
+							fill_fog(renderer, state);
+						renderer_sync_visuals(renderer, state);
 
-					// Initialize NEW game state
-					free_state(state);
+						state->program_running = true;
+						stepper_reload(state->stepper);
+					}
+					else
+					{
+						// go to the next level
+						int next_level = (*renderer).level + 1;
 
-					state = generate_world(DEFAULT_WORLD_WIDTH, DEFAULT_WORLD_HEIGHT, DEFAULT_ROBOT_COUNT);
-					(*renderer).level = next_level;
-					renderer_sync_visuals(renderer, state);
+						// Initialize NEW game state
+						free_state(state);
+
+						state = generate_world(-1, width, height, robot_count);
+						renderer_clear_fog(renderer);
+						if (foggy)
+							fill_fog(renderer, state);
+						renderer_sync_visuals(renderer, state);
+						(*renderer).level = next_level;
+					}
 				}
 
 				renderer_render(renderer, state);

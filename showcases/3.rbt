@@ -1,0 +1,83 @@
+;args; -S -s 3 -r 6 -w 12 -h 10 -f
+
+; Perform an about rotation
+fn about_face
+	turn cw
+	turn cw
+end
+
+; Scan a bit of the starting area
+	turn cw
+	forward
+	forward
+	scan $0
+	backward
+	backward
+	turn cw
+; Disassemble the first enemy
+	forward
+	turn cw
+	ram
+; Grab the first fuel can and reveal the second enemy
+	forward
+	forward
+	scan $0
+	refuel
+; Disassemble the second enemy
+	forward
+	forward
+	forward
+	scan $0
+	backward
+	turn ccw
+	forward
+	scan $0
+	ram
+; Scan more of the map and take the second fuel can
+	forward
+	forward
+	forward
+	scan $0
+	turn cw
+	forward
+	scan $0
+	refuel
+; Move towards the left of the map
+	run about_face
+	forward
+	forward
+	forward
+	scan $0
+	forward
+	forward
+	forward
+	scan $0
+; Disassemble the third enemy, then scan the area to reveal and disassemble the fourth enemy.
+	forward
+	turn ccw
+	ram
+	forward
+	forward
+	scan $0
+	turn cw
+	ram
+; Find the last enemy
+	turn cw
+	forward
+	forward
+	forward
+	scan $0
+	backward
+	turn cw
+	forward
+	forward
+	turn ccw
+	forward
+	forward
+	turn cw
+	forward
+	scan $0
+	forward
+	forward
+	scan $0
+	ram

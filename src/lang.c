@@ -21,6 +21,9 @@
 #endif
 
 
+char *DEFAULT_PROGRAM_PATH = "program.rbt";
+
+
 enum rbt_const
 {
 	rbt_const_none,
@@ -313,7 +316,18 @@ void eval_ins(State *state, LangContext *ctx, Renderer *renderer, struct rbt_ins
 		{
 		int *reg = get_reg(ctx, ins.args[0]);
 		int *tile = get_tile_with_offset(state->world, r->x, r->y, r->dir);
-		*reg = *tile;
+		if (reg && tile)
+		{
+			*reg = *tile;
+			/* clear fog, if applicable */
+			for (int dy = -1; dy <= 1; dy++)
+			{
+				for (int dx = -1; dx <= 1; dx++)
+				{
+					renderer_set_fog(renderer, r->x + dx, r->y + dy, false);
+				}
+			}
+		}
 		break;
 		}
 	case rbt_op_run:
@@ -601,25 +615,28 @@ void del_ins(struct rbt_instruction ins)
 	}
 }
 
-char *read_program(void)
+char *read_program(char *path)
 {
+	if (!path)
+		path = "program.rbt";
+
 	/* check if program.rbt exists */
 	struct stat st;
-	if (stat(LANG_PROGRAMPATH, &st)) /* file does not exist */
+	if (stat(path, &st)) /* file does not exist */
 	{
-		FILE *fp = fopen(LANG_PROGRAMPATH, "w");
+		FILE *fp = fopen(path, "w");
 		if (!fp)
 		{
-			fprintf(stderr, "error: failed to create `" LANG_PROGRAMPATH "`, are you missing permissions?\n");
+			fprintf(stderr, "error: failed to create `%s`, are you missing permissions?\n", path);
 			return NULL;
 		}
 		fclose(fp);
 	}
 
-	FILE *fp = fopen(LANG_PROGRAMPATH, "r");
+	FILE *fp = fopen(path, "r");
 	if (!fp)
 	{
-		fprintf(stderr, "error: failed to read `" LANG_PROGRAMPATH "`, are you missing permissions?\n");
+		fprintf(stderr, "error: failed to read `%s`, are you missing permissions?\n", path);
 		return NULL;
 	}
 	/* get file size */
@@ -631,14 +648,14 @@ char *read_program(void)
 	if (!s)
 	{
 		fclose(fp);
-		fprintf(stderr, "error: failed to allocate buffer to read `" LANG_PROGRAMPATH "`\n");
+		fprintf(stderr, "error: failed to allocate buffer to read `%s`", path);
 		return NULL;
 	}
 	if (fread(&s[0], 1, fs, fp) != fs)
 	{
 		fclose(fp);
 		free(s);
-		fprintf(stderr, "error: failed to read `" LANG_PROGRAMPATH "`");
+		fprintf(stderr, "error: failed to read `%s`", path);
 		return NULL;
 	}
 	s[fs] = '\0';
@@ -651,7 +668,7 @@ LangStepper *make_stepper(int robot_id, char *program)
 {
 	if (!program)
 	{
-		program = read_program();
+		program = read_program(DEFAULT_PROGRAM_PATH);
 		log("step interp: %s\n", program);
 	}
 	LangStepper *ls = malloc(sizeof(*ls));
@@ -745,7 +762,7 @@ void stepper_reload(LangStepper *ls)
 		del_context(ls->ctx);
 		free(ls->program);
 		ls->ctx = new_context(r);
-		ls->program = read_program();
+		ls->program = read_program(DEFAULT_PROGRAM_PATH);
 	}
 	ls->n = 0;
 	ls->_lexpos = 0;

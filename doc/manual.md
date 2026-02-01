@@ -149,12 +149,12 @@ expression.
 
 Mark the beginning of a function with the given name.
 
-Interestingly, robots are capable of running functions
+<!-- Interestingly, robots are capable of running functions
 instantaneously. They will, however, still consume the
 same amount as if you ran each command individually.
 
 Additionally, it may be more difficult to debug the robot
-when each command is executed in such rapid succession.
+when each command is executed in such rapid succession. -->
 
 *Sample:*
 ```

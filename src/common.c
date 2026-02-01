@@ -15,9 +15,12 @@ World *new_world(int width, int height)
 	return w;
 }
 
-State *generate_world(int width, int height, int robot_count)
+State *generate_world(long seed, int width, int height, int robot_count)
 {
-	srand((unsigned int)time(NULL));
+    if (seed == -1)
+	    srand((unsigned int)time(NULL));
+    else
+        srand(seed);
 
 	State *state = malloc(sizeof(State));
 	state->world = new_world(width, height);

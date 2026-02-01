@@ -9,24 +9,43 @@ SOURCES="src/main.c src/rendering.c src/common.c src/lang.c src/audio.c src/ui.c
 RUN_MODE=""
 
 # Parse arguments
-for arg in "$@"
+while [ $# -gt 0 ]
 do
-	case $arg in
+	case $1 in
 		--test|-t)
 			CFLAGS="$CFLAGS -DRENDER_TEST"
 			echo "Building with RENDER_TEST enabled"
+			shift
 			;;
 		--leaks|-l)
 			RUN_MODE="leaks"
 			echo "Will run with leaks detection"
+			shift
 			;;
 		--gdb|-g)
 			RUN_MODE="gdb"
 			echo "Will run with GDB"
+			shift
+			;;
+		--no-run|-n)
+			RUN_MODE="none"
+			echo "Will only compile"
+			shift
 			;;
 		--debug|-d)
 			CFLAGS="$CFLAGS -DDEBUG_GAME"
 			echo "Building with DEBUG_GAME enabled"
+			shift
+			;;
+		--args|-r)
+			PROGRAM_FLAGS=$2
+			echo "Program flags: $PROGRAM_FLAGS"
+			shift
+			shift
+			;;
+		*)
+			echo "error: unrecognized option: $1"
+			exit 1
 			;;
 	esac
 done
@@ -48,19 +67,21 @@ $CC $CFLAGS $SOURCES $LFLAGS
 # Run
 case $RUN_MODE in
 	"")
-		./robots
+		./robots $PROGRAM_FLAGS
 		;;
 	"leaks")
 		if [ "$os" = "Linux" ]
 		then
-			valgrind --track-origins=yes --leak-check=full --show-leak-kinds=all -s ./robots
+			valgrind --track-origins=yes --leak-check=full --show-leak-kinds=all -s -- ./robots $PROGRAM_FLAGS
 		elif [ "$os" = "Darwin" ]
 		then
-			leaks --atExit -- ./robots
+			leaks --atExit -- ./robots $PROGRAM_FLAGS
 		fi
 		;;
 	"gdb")
-		gdb -q -ex=r --args ./robots
+		gdb -q -ex=r --args ./robots $PROGRAM_FLAGS
+		;;
+	"none")
 		;;
 	*)
 		echo "unknown run mode '$RUN_MODE'"

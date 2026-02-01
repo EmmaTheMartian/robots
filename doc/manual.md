@@ -51,6 +51,10 @@ Statement: An operation followed by up to 4 arguments. \
 Expression: Either a register (`$0-15`), numeric literal
 (`[0-9]+`), or a constant (see [§3 Constants](#3-constants)).
 
+Comments are indicated by placing a semicolon at the start
+of a line. You cannot place comments on the same line as a
+statement.
+
 ## §2: Registers
 
 Robots are only capable of remembering up to 16 values,
@@ -148,13 +152,6 @@ expression.
 **Usage:** `fn NAME`
 
 Mark the beginning of a function with the given name.
-
-<!-- Interestingly, robots are capable of running functions
-instantaneously. They will, however, still consume the
-same amount as if you ran each command individually.
-
-Additionally, it may be more difficult to debug the robot
-when each command is executed in such rapid succession. -->
 
 *Sample:*
 ```

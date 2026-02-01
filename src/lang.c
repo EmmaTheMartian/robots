@@ -29,8 +29,8 @@ enum rbt_const
 	rbt_const_none,
 	/* tiles */
 	rbt_const_wall,
-	rbt_const_robot,
 	rbt_const_fuel,
+	rbt_const_robot,
 	/* directions */
 	rbt_const_north,
 	rbt_const_south,
@@ -70,8 +70,8 @@ char *rbt_consttos[] =
 {
 	"none",
 	"wall",
-	"robot",
 	"fuel",
+	"robot",
 	"north",
 	"south",
 	"east",
@@ -315,6 +315,25 @@ void eval_ins(State *state, LangContext *ctx, Renderer *renderer, struct rbt_ins
 	case rbt_op_scan:
 		{
 		int *reg = get_reg(ctx, ins.args[0]);
+		if (!reg)
+			break;
+
+		/* scan for robots */
+		int tx = r->x, ty = r->y;
+		switch (r->dir)
+		{
+			case North: ty--; break;
+			case East:  tx++; break;
+			case South: ty++; break;
+			case West:  tx--; break;
+		}
+		int target_idx = find_robot_pos(state, tx, ty);
+		if (target_idx != -1)
+		{
+			*reg = rbt_const_robot;
+			break;
+		}
+
 		int *tile = get_tile_with_offset(state->world, r->x, r->y, r->dir);
 		if (reg && tile)
 		{

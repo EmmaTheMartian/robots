@@ -338,7 +338,7 @@ void robot_refuel(Robot *r, int fuel_amount)
 
 /* Player Robot attacks the other Robot
  * Input/Pre-Condition: Need the Robot that's being attacked
- * Output/Post-Condition: The Robot's fuel will be set to 0
+ * Output/Post-Condition: The Robot's fuel will be set to 0, subtract from the total robots
 */
 void robot_ram(Robot *r)
 {
@@ -356,4 +356,46 @@ void robot_ram(Robot *r)
 int robot_scan(Robot *r, World *w)
 {
     return *get_tile_with_offset(w, r->x, r->y, r->dir);
+}
+
+
+/* Get the Robot's position and scan the tile in front of it and get that tile ID
+ * Input/Pre-Condition: Get the Robot's current position
+ * Output/Post-Condition: Returns the tile in front of the Robot
+*/
+void robot_disassemble(Robot *r)
+{
+    (*r).fuel = 0;
+    (*r).is_disassembled = true;
+}
+
+
+/* Use the given amount of fuel
+ * Input/Pre-Condition: Needs the Robut and how much fuel to take
+ * Output/Post-Condition: Returns true if the fuel is above 0 and false if not
+*/
+bool robot_use_fuel(Robot *r, int amount)
+{
+    // handle invalid amounts
+    if (amount <= 0)
+    {
+        return true;
+    }
+
+    // bot is out of fuel
+    if ((*r).fuel <= 0)
+    {
+        return false;
+    }
+
+    // use amount
+    (*r).fuel -= amount;
+    if ((*r).fuel < 0)
+    {
+        // can't have negative fuel
+        (*r).fuel = 0;
+    }
+
+    // return whether it's out or not
+    return ((*r).fuel > 0);
 }

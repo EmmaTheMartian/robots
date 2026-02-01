@@ -43,6 +43,7 @@ typedef struct
 	int fuel;
 	Direction dir;
 	bool is_player;
+	bool is_disassembled;
 } Robot;
 
 Robot new_robot(bool is_player, int x, int y, Direction dir);
@@ -53,6 +54,8 @@ void robot_turn_right(Robot *r);
 void robot_refuel(Robot *r, int fuel_amount);
 void robot_ram(Robot *r);
 int robot_scan(Robot *r, World *w);
+void robot_disassemble(Robot *r);
+bool robot_use_fuel(Robot *r, int amount);
 
 
 typedef struct rbt_stepper LangStepper;

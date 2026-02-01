@@ -4,6 +4,7 @@
 #include <raylib.h>
 #include <common.h>
 #include <ui.h>
+#include <editor.h>
 
 #define TILE_SIZE 16
 #define VIRTUAL_WIDTH 200
@@ -100,7 +101,7 @@ void draw_hud(State *state, int fuel, int enemy_count, int level);
 // Button indices
 #define BTN_EXECUTE 0
 #define BTN_RESET 1
-#define BTN_FOG 2
+#define BTN_EDIT 2
 #define BTN_QUIT 3
 #define BTN_COUNT 4
 
@@ -120,6 +121,8 @@ typedef struct
 	bool fog_map[MAX_WORLD_WIDTH * MAX_WORLD_HEIGHT];
 	// UI buttons
 	Button buttons[BTN_COUNT];
+	// Editor
+	Editor editor;
 } Renderer;
 
 Renderer *init_renderer(void);
@@ -138,5 +141,11 @@ void renderer_fill_fog(Renderer *r, World *w);
 // UI functions
 void renderer_update_buttons(Renderer *r);
 bool renderer_button_clicked(Renderer *r, int button_id);
+
+// Editor functions
+void renderer_open_editor(Renderer *r);
+void renderer_close_editor(Renderer *r);
+bool renderer_editor_active(Renderer *r);
+int renderer_update_editor(Renderer *r);
 
 #endif

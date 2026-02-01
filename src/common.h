@@ -11,6 +11,8 @@
 
 #define MAX_FUEL 100
 #define MAX_ROBOTS 16
+#define EXEC_SPEED_SECONDS (1.0f)
+#define EXEC_SPEED ((int)(EXEC_SPEED_SECONDS*60)) /* frames per statement executed */
 
 
 typedef enum
@@ -44,8 +46,8 @@ typedef struct
 } Robot;
 
 Robot new_robot(bool is_player, int x, int y, Direction dir);
-void robot_forward(Robot *r);
-void robot_backward(Robot *r);
+bool robot_forward(World *w, Robot *r);
+bool robot_backward(World *w, Robot *r);
 void robot_turn_left(Robot *r);
 void robot_turn_right(Robot *r);
 void robot_refuel(Robot *r, int fuel_amount);
@@ -53,11 +55,14 @@ void robot_ram(Robot *r);
 int robot_scan(Robot *r, World *w);
 
 
+typedef struct rbt_stepper LangStepper;
 typedef struct
 {
 	World *world;
 	Robot robots[MAX_ROBOTS];
 	int robot_count;
+	LangStepper *stepper;
+	bool program_running;
 } State;
 
 State *generate_world(int width, int height, int robot_count);

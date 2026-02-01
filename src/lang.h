@@ -3,6 +3,7 @@
 
 
 #include <common.h>
+#include <rendering.h>
 
 
 #ifndef LANG_NREGS
@@ -41,6 +42,11 @@ typedef enum rbt_op
 	rbt_op_set,
 	rbt_op_fn,
 	rbt_op_end,
+	rbt_op_add,
+	rbt_op_sub,
+	rbt_op_mul,
+	rbt_op_div,
+	rbt_op_mod,
 } LangOp;
 
 
@@ -60,7 +66,7 @@ typedef struct rbt_fn
 
 typedef struct
 {
-	int robot_id;
+	int robot; /* robot index */
 	int registers[LANG_NREGS];
 	int _nfns; /* number of functions */
 	LangFn fns[LANG_NFNS];
@@ -69,13 +75,29 @@ typedef struct
 	char error_msg[LANG_ERRORBUFSIZ];
 } LangContext;
 
+typedef struct rbt_stepper
+{
+	LangContext *ctx;
+	char *program;
+	unsigned n;
+	long _lexpos;
+} LangStepper;
 
 /* Read local program.rbt. */
 char *read_program(void);
-/* Interpret the given code. */
-void interpret(State *state, LangContext *ctx, char *program);
+
+/* Create a stepper to interpret the code line-by-line. */
+LangStepper *make_stepper(int robot_id, char *program);
+/* Step a stepper. */
+bool stepper_step(State *state, LangStepper *ls, Renderer *renderer);
+/* Reread the program and restart the stepper. */
+void stepper_reload(LangStepper *ls);
+/* Free a stepper. */
+void del_stepper(LangStepper *ls);
+/* Interpret the given code instantly. */
+void interpret(State *state, LangContext *ctx, Renderer *renderer, char *program);
 /* Create a new language context. */
-LangContext new_context(void);
+LangContext *new_context(int robot_id);
 /* Delete a language context. */
 void del_context(LangContext *c);
 

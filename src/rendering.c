@@ -1,4 +1,6 @@
 #include <rendering.h>
+#include <common.h>
+#include <lang.h>
 #include <math.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -356,7 +358,7 @@ void render_robots(State *state, RobotVisual *visuals, Animation *player_anim, A
 	}
 }
 
-void draw_hud(int fuel, int enemy_count, int level)
+void draw_hud(State *state, int fuel, int enemy_count, int level)
 {
 	char buffer[32];
 	int font_size = 8;
@@ -370,6 +372,14 @@ void draw_hud(int fuel, int enemy_count, int level)
 
 	snprintf(buffer, sizeof(buffer), "Level: %d", level);
 	DrawText(buffer, 120, y, font_size, WHITE);
+
+	y += font_size + 2;
+
+	if (state->program_running)
+		snprintf(buffer, sizeof(buffer), "Step: %d", state->stepper->n);
+	else
+		snprintf(buffer, sizeof(buffer), "[Space] to start/stop code.");
+	DrawText(buffer, 2, y, font_size, WHITE);
 }
 
 Renderer *init_renderer(void)
@@ -470,7 +480,15 @@ void renderer_render(Renderer *r, State *state)
 	}
 
 	int fuel = player ? player->fuel : 0;
-	draw_hud(fuel, enemy_count, r->level);
+	draw_hud(state, fuel, enemy_count, r->level);
+
+	/* Debug information */
+	#if DEBUG_GAME
+	int size = 8;
+	int y = 0;
+	DrawText(TextFormat("FPS: %d", GetFPS()), 0, y, size, RED); y += size;
+	DrawText(TextFormat("Pos: %d,%d", player->x, player->y), 0, y, size, RED); y += size;
+	#endif
 
 	end_virtual_drawing(r->target);
 }

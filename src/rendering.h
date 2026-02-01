@@ -76,7 +76,7 @@ void robot_visual_ram(RobotVisual *v, Direction dir);
 
 void render_robots(State *state, RobotVisual *visuals, Animation *player_anim, Animation *enemy_anim, int screen_x, int screen_y);
 
-void draw_hud(int fuel, int enemy_count, int level);
+void draw_hud(State *state, int fuel, int enemy_count, int level);
 
 // Maximum world size for fog map
 #define MAX_WORLD_WIDTH 16

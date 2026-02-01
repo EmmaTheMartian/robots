@@ -1,7 +1,9 @@
-fn life
-	if $1 > 40 then print $1
-	if $1 <= 40 then print 0
+fn a
+	forward
+	turn right
 end
 
-set $1 -20
-run life
+run a
+run a
+run a
+run a

@@ -1,7 +1,8 @@
 #include <stdlib.h>
-#include <common.h>
 #include <stdlib.h>
 #include <time.h>
+#include <common.h>
+#include <lang.h>
 
 World *new_world(int width, int height)
 {
@@ -82,6 +83,10 @@ State *generate_world(int width, int height, int robot_count)
 		}
 	}
 
+    /* Create language context */
+    state->stepper = make_stepper(0, NULL);
+    state->program_running = false;
+
 	return state;
 }
 
@@ -89,6 +94,7 @@ void free_state(State *state)
 {
 	if (state)
 	{
+		del_stepper(state->stepper);
 		free(state->world);
 		free(state);
 	}
@@ -155,7 +161,7 @@ bool is_tile_free(World *w, int x, int y)
 */
 Robot new_robot(bool is_player, int x, int y, Direction dir)
 {
-    Robot r;
+    Robot r = {0};
     r.x = x;
     r.y = y;
     r.fuel = MAX_FUEL;
@@ -168,66 +174,90 @@ Robot new_robot(bool is_player, int x, int y, Direction dir)
  * Input/Pre-Condition: Needs the Robot that's moving
  * Output/Post-Condition: The Robot's x & y position will get updated based on the Direction its facing
 */
-void robot_forward(Robot *r)
+bool robot_forward(World *w, Robot *r)
 {
     // get the Robot's current facing direction
     Direction current_dir = (*r).dir;
+
+    int x = r->x;
+    int y = r->y;
 
     // move based on the robot's current facing direction
     switch(current_dir)
     {
         case North:
             // move up 1
-            (*r).y--;
+            y--;
             break;
         case East:
             // move right 1
-            (*r).x++;
+            x++;
             break;
         case South:
             // move down 1
-            (*r).y++;
+            y++;
             break;
         case West:
             // move left 1
-            (*r).x--;
+            x--;
             break;
         default:
             // do nothing
     }
+
+    if (is_tile_free(w, x, y))
+    {
+        r->x = x;
+        r->y = y;
+        return true;
+    }
+
+    return false;
 }
 
 /* Make the Robot go backwards
  * Input/Pre-Condition: Needs the Robot that's moving
  * Output/Post-Condition: The Robot's x & y position will get updated based on the Direction its facing
 */
-void robot_backward(Robot *r)
+bool robot_backward(World *w, Robot *r)
 {
     // get the Robot's current facing direction
     Direction current_dir = (*r).dir;
+
+    int x = r->x;
+    int y = r->y;
 
     // move based on the robot's current facing direction
     switch(current_dir)
     {
         case North:
             // move down 1
-            (*r).y++;
+            y++;
             break;
         case East:
             // move left 1
-            (*r).x--;
+            x--;
             break;
         case South:
             // move up 1
-            (*r).y--;
+            y--;
             break;
         case West:
             // move right 1
-            (*r).x++;
+            x++;
             break;
         default:
             // do nothing
     }
+
+    if (is_tile_free(w, x, y))
+    {
+        r->x = x;
+        r->y = y;
+        return true;
+    }
+
+    return false;
 }
 
 /* Make the Robot pivot left

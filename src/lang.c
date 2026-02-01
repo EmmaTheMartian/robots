@@ -5,6 +5,8 @@
 #include <ctype.h>
 #include <sys/stat.h>
 #include <lang.h>
+#include <rendering.h>
+#include <audio.h>
 
 
 #ifndef LANG_ARGBUFSIZ
@@ -12,7 +14,7 @@
 #endif
 
 
-#if 0
+#if DEBUG_GAME
 # define log(fmt, ...) printf(fmt __VA_OPT__(,) __VA_ARGS__)
 #else
 # define log(fmt, ...) do { } while(0)
@@ -52,6 +54,11 @@ char *rbt_optos[] =
 	"set",
 	"fn",
 	"end",
+	"add",
+	"sub",
+	"mul",
+	"div",
+	"mod",
 	NULL,
 };
 
@@ -82,8 +89,8 @@ struct rbt_opinfo rbt_ops[] =
 {
 	[rbt_op_err]      = { .argc=0 },
 	[rbt_op_print]    = { .argc=1, .usage="print [VALUE]" },
-	[rbt_op_forward]  = { .argc=1, .usage="forward [N]" },
-	[rbt_op_backward] = { .argc=1, .usage="backward [N]" },
+	[rbt_op_forward]  = { .argc=0, .usage="forward" },
+	[rbt_op_backward] = { .argc=0, .usage="backward" },
 	[rbt_op_turn]     = { .argc=1, .usage="turn left|right" },
 	[rbt_op_refuel]   = { .argc=0, .usage="refuel" },
 	[rbt_op_ram]      = { .argc=0, .usage="ram" },
@@ -92,30 +99,17 @@ struct rbt_opinfo rbt_ops[] =
 	[rbt_op_if]       = { .argc=4, .usage="if VALUE OPERATION VALUE then STATEMENT" },
 	[rbt_op_fn]       = { .argc=1, .usage="fn NAME" },
 	[rbt_op_end]      = { .argc=0, .usage="end" },
+	[rbt_op_add]      = { .argc=2, .usage="add REGISTER N" },
+	[rbt_op_sub]      = { .argc=2, .usage="sub REGISTER N" },
+	[rbt_op_mul]      = { .argc=2, .usage="mul REGISTER N" },
+	[rbt_op_div]      = { .argc=2, .usage="div REGISTER N" },
+	[rbt_op_mod]      = { .argc=2, .usage="mod REGISTER N" },
 };
 
 
-/* todo: move this to common.{c,h} */
 static
-int *get_tile_with_offset(World *w, int x, int y, Direction d)
-{
-	switch (d)
-	{
-	case North:
-		y--;
-		break;
-	case South:
-		y++;
-		break;
-	case East:
-		x++;
-		break;
-	case West:
-		x--;
-		break;
-	}
-	return get_tile(w, x, y);
-}
+void print_ins(LangIns ins);
+
 
 static
 void panic(LangContext *ctx, char *fmt, ...)
@@ -193,9 +187,14 @@ int eval_val(LangContext *ctx, char *val)
 }
 
 static
-void eval_ins(State *state, LangContext *ctx, struct rbt_instruction ins)
+void eval_ins(State *state, LangContext *ctx, Renderer *renderer, struct rbt_instruction ins)
 {
-	Robot *r = &state->robots[ctx->robot_id];
+	Robot *r = &state->robots[ctx->robot];
+	RobotVisual *rv = renderer_get_visual(renderer, ctx->robot);
+
+	log("&state(%p)->robots[ctx->robot(%d)] = %p\n", state, ctx->robot, r);
+
+	// print_ins(ins);
 	switch (ins.op)
 	{
 	case rbt_op_print:
@@ -205,29 +204,37 @@ void eval_ins(State *state, LangContext *ctx, struct rbt_instruction ins)
 		break;
 		}
 	case rbt_op_forward:
-		{
-		int n = ins.args[0] ? eval_val(ctx, ins.args[0]) : 1;
-		for (int i = 0 ; i < n ; i++)
-			robot_forward(r);
-		break;
-		}
 	case rbt_op_backward:
 		{
-		int n = eval_val(ctx, ins.args[0]);
-		for (int i = 0 ; i < n ; i++)
-			robot_backward(r);
-		break;
+		bool moved = (ins.op == rbt_op_forward) ?
+			robot_forward(state->world, r) :
+			robot_backward(state->world, r);
+		if (moved)
+		{
+			robot_visual_move_to(rv, r->x, r->y);
+			play_sfx((ins.op == rbt_op_forward) ?
+					SFX_ADVANCING :
+					SFX_REVERSE);
 		}
+		else if (!robot_visual_is_animating(rv))
+			robot_visual_ram(rv, r->dir); /* ram to indicate that the player can't move there. */
+		}
+		break;
 	case rbt_op_turn:
 		if (eval_val(ctx, ins.args[0]) == rbt_const_left)
 			robot_turn_left(r);
 		else if (eval_val(ctx, ins.args[0]) == rbt_const_right)
 			robot_turn_right(r);
 		else
+		{
 			panic(ctx, "turn expects argument to be either `left` or `right`.");
+			break;
+		}
+		play_sfx(SFX_ROTATING);
+		robot_visual_rotate_to(rv, r->dir);
 		break;
 	case rbt_op_refuel:
-		if (get_tile(&state->world, r->x, r->y) == 0) /* todo: replace 0 with a tile ID */
+		if (get_tile(state->world, r->x, r->y) == 0) /* todo: replace 0 with a tile ID */
 			robot_refuel(r, 100); /* todo: `100` is totally arbitrary. */
 		break;
 	case rbt_op_ram:
@@ -235,7 +242,7 @@ void eval_ins(State *state, LangContext *ctx, struct rbt_instruction ins)
 	case rbt_op_scan:
 		{
 		int *reg = get_reg(ctx, ins.args[0]);
-		int *tile = get_tile_with_offset(&state->world, r->x, r->y, r->dir);
+		int *tile = get_tile_with_offset(state->world, r->x, r->y, r->dir);
 		*reg = *tile;
 		break;
 		}
@@ -251,7 +258,7 @@ void eval_ins(State *state, LangContext *ctx, struct rbt_instruction ins)
 		log("run: %s\n", name);
 		for (int i = 0 ; i < fn->_codelen ; i++)
 		{
-			eval_ins(state, ctx, fn->code[i]);
+			eval_ins(state, ctx, renderer, fn->code[i]);
 		}
 		break;
 		}
@@ -294,17 +301,19 @@ void eval_ins(State *state, LangContext *ctx, struct rbt_instruction ins)
 		}
 		if (res)
 		{
-			interpret(state, ctx, ins.args[3]);
+			interpret(state, ctx, renderer, ins.args[3]);
 		}
 		break;
 		}
 	case rbt_op_set:
 		{
-		printf("set: %s\n", ins.args[0]);
 		int *reg = get_reg(ctx, ins.args[0]);
 		int val = eval_val(ctx, ins.args[1]);
 		if (reg)
+		{
+			log("set %s = %d\n", ins.args[0], val);
 			*reg = val;
+		}
 		break;
 		}
 	case rbt_op_fn:
@@ -353,6 +362,25 @@ void eval_ins(State *state, LangContext *ctx, struct rbt_instruction ins)
 			break;
 		}
 		ctx->_curfn = -1;
+		break;
+		}
+	case rbt_op_add:
+	case rbt_op_sub:
+	case rbt_op_mul:
+	case rbt_op_div:
+	case rbt_op_mod:
+		{
+		int *r = get_reg(ctx, ins.args[0]);
+		int n = eval_val(ctx, ins.args[1]);
+		switch (ins.op)
+		{
+		case rbt_op_add: *r += n; break;
+		case rbt_op_sub: *r -= n; break;
+		case rbt_op_mul: *r *= n; break;
+		case rbt_op_div: *r /= n; break;
+		case rbt_op_mod: *r %= n; break;
+		default: break; /* unreachable */
+		}
 		break;
 		}
 	default:
@@ -453,7 +481,6 @@ done_skipping_ws:
 				advance();
 			}
 		}
-		log("argument: %s\n", arg);
 		/* anything after `then` or `:` is literal */
 		if (strcmp(arg, "then") == 0 || strcmp(arg, ":") == 0)
 		{
@@ -495,7 +522,10 @@ static
 void del_ins(struct rbt_instruction ins)
 {
 	for (int i = 0 ; i < LANG_MAXARGC && ins.args[i] ; i++)
+	{
 		free(ins.args[i]);
+		ins.args[i] = NULL;
+	}
 }
 
 char *read_program(void)
@@ -544,22 +574,38 @@ char *read_program(void)
 	return s;
 }
 
-void interpret(State *state, LangContext *ctx, char *program)
+LangStepper *make_stepper(int robot_id, char *program)
 {
-	long index = 0;
-
-	log("interp: %s\n", program);
-
-	struct rbt_instruction ins;
-	while (index != -1)
+	if (!program)
 	{
-		ins = parse_ins(ctx, &index, program);
+		program = read_program();
+		log("step interp: %s\n", program);
+	}
+	LangStepper *ls = malloc(sizeof(*ls));
+	ls->ctx = new_context(robot_id);
+	ls->program = program;
+	ls->n = 0;
+	ls->_lexpos = 0;
+	return ls;
+}
+
+bool stepper_step(State *state, LangStepper *ls, Renderer *renderer)
+{
+	if (ls->_lexpos == -1)
+		return false;
+
+	ls->n++;
+	LangIns ins;
+	/* loop so that we can "skip" function definitions */
+	while (ls->_lexpos != -1)
+	{
+		ins = parse_ins(ls->ctx, &ls->_lexpos, ls->program);
 		if (ins.op == rbt_op_err)
 			break;
 
-		if (ctx->_curfn > -1 && ins.op != rbt_op_end)
+		if (ls->ctx->_curfn > -1 && ins.op != rbt_op_end)
 		{
-			LangFn *fn = &ctx->fns[ctx->_curfn];
+			LangFn *fn = &ls->ctx->fns[ls->ctx->_curfn];
 			if (fn->_codelen + 1 > fn->_codecap)
 			{
 				int newcap = fn->_codecap * 2;
@@ -567,7 +613,7 @@ void interpret(State *state, LangContext *ctx, char *program)
 				LangIns *newcode = realloc(fn->code, newcap * sizeof(LangIns));
 				if (!newcode)
 				{
-					panic(ctx, "failed to grow array for function code");
+					panic(ls->ctx, "failed to grow array for function code");
 					break;
 				}
 				fn->code = newcode;
@@ -577,19 +623,57 @@ void interpret(State *state, LangContext *ctx, char *program)
 		}
 		else
 		{
-			// print_ins(ins);
-			eval_ins(state, ctx, ins);
-			if (ctx->errored)
-				break;
+			eval_ins(state, ls->ctx, renderer, ins);
+
+			if (ls->ctx->errored)
+				return false;
+
+			int op = ins.op;
 			del_ins(ins);
+
+			/* We want to "skip" over functions completely, so `end` won't cause a wait. */
+			if (op == rbt_op_end)
+				continue;
+
+			return true;
 		}
 	}
+
+	return false;
 }
 
-LangContext new_context(void)
+void stepper_reload(LangStepper *ls)
 {
-	LangContext c = {0};
-	c._curfn = -1;
+	int r = ls->ctx->robot;
+
+	del_context(ls->ctx);
+	free(ls->program);
+
+	ls->ctx = new_context(r);
+	ls->program = read_program();
+	ls->n = 0;
+	ls->_lexpos = 0;
+}
+
+void del_stepper(LangStepper *ls)
+{
+	del_context(ls->ctx);
+	free(ls->program);
+	free(ls);
+}
+
+void interpret(State *state, LangContext *ctx, Renderer *renderer, char *program)
+{
+	LangStepper *ls = make_stepper(0, program);
+	while (stepper_step(state, ls, renderer)) ;
+	del_stepper(ls);
+}
+
+LangContext *new_context(int robot_id)
+{
+	LangContext *c = calloc(1, sizeof(*c));
+	c->robot = robot_id;
+	c->_curfn = -1;
 	return c;
 }
 
@@ -600,11 +684,12 @@ void del_context(LangContext *c)
 		if (c->fns[i].name)
 		{
 			free(c->fns[i].name);
+			c->fns[i].name = NULL;
 			for (int j = 0 ; j < c->fns[i]._codelen ; j++)
-			{
 				del_ins(c->fns[i].code[j]);
-			}
 			free(c->fns[i].code);
+			c->fns[i].code = NULL;
 		}
 	}
+	free(c);
 }

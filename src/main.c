@@ -4,6 +4,7 @@
 #include <common.h>
 #include <rendering.h>
 #include <audio.h>
+#include <lang.h>
 
 #ifdef RENDER_TEST
 #include <render_test.h>
@@ -90,12 +91,15 @@ int main(void)
 	Renderer *renderer = init_renderer();
 	State *state = NULL;
 	GameState game_state = GAME_TITLE;
+	unsigned long frame = 0, program_frame = 0;
 
 	Texture2D title_texture = LoadTexture("assets/title.png");
 	Texture2D gameover_texture = LoadTexture("assets/gameover.png");
 
 	while (!WindowShouldClose())
 	{
+		frame++;
+
 		update_music();
 
 		switch (game_state)
@@ -132,6 +136,23 @@ int main(void)
 #endif
 
 				// TODO: Additional game logic here for processing instructions, etc.
+				if (
+					state->program_running &&
+					++program_frame % EXEC_SPEED == 0 &&
+					!stepper_step(state, state->stepper, renderer)
+				)
+				{
+					state->program_running = false;
+					program_frame = 0;
+				}
+
+				if (IsKeyPressed(KEY_SPACE))
+				{
+					state->program_running = !state->program_running;
+					if (state->program_running)
+						stepper_reload(state->stepper);
+					program_frame = 0;
+				}
 
 				// Check for game over condition
 				Robot *player = &state->robots[0];

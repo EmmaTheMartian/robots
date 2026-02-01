@@ -130,6 +130,21 @@ int main(void)
 			case GAME_PLAYING:
 			{
 				renderer_update(renderer, state, ANIM_SPEED);
+
+				// Handle editor if active
+				if (renderer_editor_active(renderer))
+				{
+					int editor_result = renderer_update_editor(renderer);
+					if (editor_result == 1)
+					{
+						// Saved - reload the program
+						stepper_reload(state->stepper);
+					}
+					// If editor is active, skip game logic and button updates
+					renderer_render(renderer, state);
+					break;
+				}
+
 				renderer_update_buttons(renderer);
 
 #ifdef RENDER_TEST
@@ -166,9 +181,10 @@ int main(void)
 					play_sfx(SFX_AWAITING_INSTRUCTIONS);
 				}
 
-				if (renderer_button_clicked(renderer, BTN_FOG))
+				if (renderer_button_clicked(renderer, BTN_EDIT))
 				{
-					renderer_fill_fog(renderer, state->world);
+					// Open the program editor
+					renderer_open_editor(renderer);
 				}
 
 				if (renderer_button_clicked(renderer, BTN_QUIT))

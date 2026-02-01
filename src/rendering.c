@@ -410,8 +410,16 @@ Renderer *init_renderer(void)
 
 	button_init(&r->buttons[BTN_EXECUTE], start_x, BTN_Y, BTN_WIDTH, BTN_HEIGHT, "Execute");
 	button_init(&r->buttons[BTN_RESET], start_x + (BTN_WIDTH + BTN_GAP), BTN_Y, BTN_WIDTH, BTN_HEIGHT, "Reset");
-	button_init(&r->buttons[BTN_FOG], start_x + (BTN_WIDTH + BTN_GAP) * 2, BTN_Y, BTN_WIDTH, BTN_HEIGHT, "Add Fog");
+	button_init(&r->buttons[BTN_EDIT], start_x + (BTN_WIDTH + BTN_GAP) * 2, BTN_Y, BTN_WIDTH, BTN_HEIGHT, "Edit");
 	button_init(&r->buttons[BTN_QUIT], start_x + (BTN_WIDTH + BTN_GAP) * 3, BTN_Y, BTN_WIDTH, BTN_HEIGHT, "Quit");
+
+	// Initialize editor - centered on screen with padding
+	int editor_padding = 10;
+	editor_init(&r->editor,
+		editor_padding,
+		editor_padding,
+		VIRTUAL_WIDTH - editor_padding * 2,
+		VIRTUAL_HEIGHT - editor_padding * 2);
 
 	return r;
 }
@@ -493,11 +501,17 @@ void renderer_render(Renderer *r, State *state)
 	int fuel = player ? player->fuel : 0;
 	draw_hud(state, fuel, enemy_count, r->level);
 
-	// Draw buttons
-	for (int i = 0; i < BTN_COUNT; i++)
+	// Draw buttons (only if editor is not active)
+	if (!editor_is_active(&r->editor))
 	{
-		button_draw(&r->buttons[i]);
+		for (int i = 0; i < BTN_COUNT; i++)
+		{
+			button_draw(&r->buttons[i]);
+		}
 	}
+
+	// Draw editor on top if active
+	editor_draw(&r->editor);
 
 	/* Debug information */
 	#if DEBUG_GAME
@@ -603,4 +617,25 @@ bool renderer_button_clicked(Renderer *r, int button_id)
 {
 	if (button_id < 0 || button_id >= BTN_COUNT) return false;
 	return button_clicked(&r->buttons[button_id]);
+}
+
+void renderer_open_editor(Renderer *r)
+{
+	editor_open(&r->editor);
+}
+
+void renderer_close_editor(Renderer *r)
+{
+	editor_close(&r->editor);
+}
+
+bool renderer_editor_active(Renderer *r)
+{
+	return editor_is_active(&r->editor);
+}
+
+int renderer_update_editor(Renderer *r)
+{
+	float scale = (float)SCREEN_WIDTH / (float)VIRTUAL_WIDTH;
+	return editor_update(&r->editor, scale);
 }

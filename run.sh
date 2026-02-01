@@ -4,7 +4,7 @@ set -e
 CC="gcc"
 CFLAGS="-o robots -g -std=c99 -Iraylib/src/ -Isrc/"
 LFLAGS=""
-SOURCES="src/main.c src/rendering.c src/common.c src/lang.c src/audio.c src/ui.c src/render_test.c ./raylib/src/libraylib.a"
+SOURCES="src/main.c src/rendering.c src/common.c src/lang.c src/audio.c src/ui.c src/editor.c src/render_test.c ./raylib/src/libraylib.a"
 # Options
 RUN_MODE=""
 

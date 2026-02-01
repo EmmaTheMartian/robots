@@ -12,7 +12,7 @@
 #define MAX_FUEL 50
 #define FUEL_CANISTER_AMOUNT 25
 #define MAX_ROBOTS 16
-#define EXEC_SPEED_SECONDS (1.0f)
+#define EXEC_SPEED_SECONDS (0.65f)
 #define EXEC_SPEED ((int)(EXEC_SPEED_SECONDS*60)) /* frames per statement executed */
 
 // World generation constants
@@ -22,6 +22,12 @@
 #define WALL_DIVISOR 10      // Interior tiles / this = wall count
 #define ENERGY_DIVISOR 20    // Interior tiles / this = energy count
 #define MAX_PLACEMENT_ATTEMPTS 100
+
+// Window constants
+#define VIRTUAL_WIDTH 200
+#define VIRTUAL_HEIGHT 200
+#define SCREEN_WIDTH 800
+#define SCREEN_HEIGHT 800
 
 
 typedef enum

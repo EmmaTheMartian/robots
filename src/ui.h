@@ -6,6 +6,8 @@
 
 #define MAX_BUTTON_TEXT 32
 
+extern const Color BTN_BG, BTN_HOVER, BTN_BORDER, BTN_FLASH;
+
 typedef struct
 {
 	int x, y;

@@ -7,10 +7,6 @@
 #include <editor.h>
 
 #define TILE_SIZE 16
-#define VIRTUAL_WIDTH 200
-#define VIRTUAL_HEIGHT 200
-#define SCREEN_WIDTH 800
-#define SCREEN_HEIGHT 800
 
 // UI layout constants
 #define HUD_FONT_SIZE 8
@@ -123,6 +119,8 @@ typedef struct
 	Button buttons[BTN_COUNT];
 	// Editor
 	Editor editor;
+	// Notification
+	char *notification_msg; /* when NULL, no notification is shown. */
 } Renderer;
 
 Renderer *init_renderer(void);
@@ -147,5 +145,9 @@ void renderer_open_editor(Renderer *r);
 void renderer_close_editor(Renderer *r);
 bool renderer_editor_active(Renderer *r);
 int renderer_update_editor(Renderer *r);
+
+// Notification functions
+void renderer_set_notif(Renderer *r, char *msg); /* duplicates the given string */
+void renderer_clear_notif(Renderer *r);
 
 #endif

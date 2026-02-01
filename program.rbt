@@ -1,3 +1,5 @@
-forward
-turn cw
-ram
+fn bozo
+	print 10
+end
+
+run bozo

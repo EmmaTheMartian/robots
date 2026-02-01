@@ -42,6 +42,7 @@ Disassembly*.
 	10. [End Function](#410-end-function)
 	11. [Run Function](#411-run-function)
 	12. [Add, Subtract, Multiply, Divide, and Modulo](#412-add-subtract-multiply-divide-and-modulo)
+5. [Error Codes](#5-error-codes)
 
 ## §1: Syntax and Terms
 
@@ -184,3 +185,20 @@ Run the function with the given name.
 Take the value in the provided `$REGISTER` and calculate it
 with the provided `VALUE` expression. The result is put back
 into the `$REGISTER`.
+
+## §5: Error Codes
+
+| Code | Description |
+| ---- | ----------- |
+| 0-9  | Internal errors (i.e, a problem with the game) |
+| 100+ | Syntax errors |
+| 100  | Register-related syntax error. You likely forgot a `$` where it was required or you tried to access a non-existent register. Remember that there are only 16 and indexes start at 0. |
+| 101  | Unknown constant. Check your spelling. |
+| 102  | Expression/value syntax error. |
+| 103  | Invalid operation, check §4 for a list of operations. Check your spelling. This may also occur when an if statement's operation is wrong (`==`, `!=`, etc). |
+| 104  | You attempted to create a function inside a function. RSL doesn't support higher-order functions. |
+| 105  | `end` was found outside of a function. |
+| 500+ | Misc errors. |
+| 500  | No such function. Check your spelling. |
+| 501  | You attempted to create a function with a name that is already in use. |
+| 510  | Invalid operation argument. Check for typos. |

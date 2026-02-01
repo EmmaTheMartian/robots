@@ -6,6 +6,7 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 // Forward declarations
 static void render_fog(Renderer *r, World *w, int screen_x, int screen_y);
@@ -421,6 +422,9 @@ Renderer *init_renderer(void)
 		VIRTUAL_WIDTH - editor_padding * 2,
 		VIRTUAL_HEIGHT - editor_padding * 2);
 
+	/* Initialize notifications */
+	r->notification_msg = NULL;
+
 	return r;
 }
 
@@ -512,6 +516,47 @@ void renderer_render(Renderer *r, State *state)
 
 	// Draw editor on top if active
 	editor_draw(&r->editor);
+
+	/* Draw notification if present */
+	if (r->notification_msg)
+	{
+		const int
+			width = r->target.texture.width - 20,
+			height = 24,
+			x1 = 10,
+			y1 = 1,
+			x2 = x1 + width - 1,
+			y2 = y1 + height - 1;
+
+		const Vector2 mouse = GetMousePosition();
+		const float scale = (float)SCREEN_WIDTH / (float)VIRTUAL_WIDTH;
+		const int mx = (int)(mouse.x / scale), my = (int)(mouse.y / scale);
+		const bool hovering = mx >= x1 && mx < x2 && my >= y1 && my < y2;
+
+		const Color bg = BTN_BG;
+		const Color fg = hovering ? BTN_HOVER : BTN_BORDER;
+
+		DrawRectangle(x1, y1, width, height, bg);
+		DrawLine(x1, y1, x2, y1, fg);      // Top
+		DrawLine(x1, y2, x2, y2, fg);      // Bottom
+		DrawLine(x1, y1, x1, y2 + 1, fg);  // Left (+1 to include bottom-left)
+		DrawLine(x2, y1, x2, y2 + 1, fg);  // Right (+1 to include bottom-right)
+
+		const int font_size = HUD_FONT_SIZE;
+		int text_width = MeasureText(r->notification_msg, font_size);
+		int text_x = x1 + (width - text_width) / 2;
+		int text_y = y1 + (height - font_size) / 2 - (font_size / 2) - 2;
+		DrawText(r->notification_msg, text_x, text_y, font_size, fg);
+
+		const char *s = "(click to hide)";
+		text_width = MeasureText(s, font_size);
+		text_x = x1 + (width - text_width) / 2;
+		text_y = y1 + (height - font_size) / 2 + (font_size / 2) + 1;
+		DrawText(s, text_x, text_y, font_size - 2, fg);
+
+		if (hovering && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+			renderer_clear_notif(r);
+	}
 
 	/* Debug information */
 	#if DEBUG_GAME
@@ -638,4 +683,23 @@ int renderer_update_editor(Renderer *r)
 {
 	float scale = (float)SCREEN_WIDTH / (float)VIRTUAL_WIDTH;
 	return editor_update(&r->editor, scale);
+}
+
+void renderer_set_notif(Renderer *r, char *msg)
+{
+	renderer_clear_notif(r);
+	unsigned n = strlen(msg);
+	char *s = malloc(n+1);
+	memcpy(&s[0], msg, n);
+	s[n] = '\0';
+	r->notification_msg = s;
+}
+
+void renderer_clear_notif(Renderer *r)
+{
+	if (r->notification_msg)
+	{
+		free(r->notification_msg);
+		r->notification_msg = NULL;
+	}
 }

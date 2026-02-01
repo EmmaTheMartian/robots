@@ -1,12 +1,14 @@
-#include "ui.h"
+#include <ui.h>
+#include <common.h>
 #include <string.h>
 
 #define FLASH_DURATION 0.15f
 
 // Colors from robot.gif palette
-static const Color BTN_BG = { 40, 65, 110, 255 };        // Dark blue
-static const Color BTN_BORDER = { 140, 190, 215, 255 };  // Light cyan
-static const Color BTN_FLASH = { 100, 155, 190, 255 };   // Medium cyan
+const Color BTN_BG = { 40, 65, 110, 255 };        // Dark blue
+const Color BTN_HOVER = { 206, 241, 255, 255 };   // Very light cyan
+const Color BTN_BORDER = { 140, 190, 215, 255 };  // Light cyan
+const Color BTN_FLASH = { 100, 155, 190, 255 };   // Medium cyan
 
 void button_init(Button *btn, int x, int y, int width, int height, const char *text)
 {
@@ -54,6 +56,15 @@ void button_draw(Button *btn)
 	// Background color - flash lighter when clicked
 	Color bg = btn->flash_timer > 0.0f ? BTN_FLASH : BTN_BG;
 
+	Vector2 mouse = GetMousePosition();
+	float scale = (float)SCREEN_WIDTH / (float)VIRTUAL_WIDTH;
+	int mx = (int)(mouse.x / scale);
+	int my = (int)(mouse.y / scale);
+	Rectangle rec = {btn->x, btn->y, btn->width, btn->height};
+	bool hovering = mx >= btn->x && mx < btn->x + btn->width &&
+	                my >= btn->y && my < btn->y + btn->height;
+	Color fg = hovering ? BTN_HOVER : BTN_BORDER;
+
 	DrawRectangle(btn->x, btn->y, btn->width, btn->height, bg);
 
 	// Draw border - DrawLine excludes endpoint, so vertical lines need +1 to reach bottom corners
@@ -61,10 +72,10 @@ void button_draw(Button *btn)
 	int y1 = btn->y;
 	int x2 = btn->x + btn->width - 1;
 	int y2 = btn->y + btn->height - 1;
-	DrawLine(x1, y1, x2, y1, BTN_BORDER);      // Top
-	DrawLine(x1, y2, x2, y2, BTN_BORDER);      // Bottom
-	DrawLine(x1, y1, x1, y2 + 1, BTN_BORDER);  // Left (+1 to include bottom-left)
-	DrawLine(x2, y1, x2, y2 + 1, BTN_BORDER);  // Right (+1 to include bottom-right)
+	DrawLine(x1, y1, x2, y1, fg);      // Top
+	DrawLine(x1, y2, x2, y2, fg);      // Bottom
+	DrawLine(x1, y1, x1, y2 + 1, fg);  // Left (+1 to include bottom-left)
+	DrawLine(x2, y1, x2, y2 + 1, fg);  // Right (+1 to include bottom-right)
 
 	// Center text in button
 	int font_size = 8;
@@ -72,7 +83,7 @@ void button_draw(Button *btn)
 	int text_x = btn->x + (btn->width - text_width) / 2;
 	int text_y = btn->y + (btn->height - font_size) / 2;
 
-	DrawText(btn->text, text_x, text_y, font_size, BTN_BORDER);
+	DrawText(btn->text, text_x, text_y, font_size, fg);
 }
 
 bool button_clicked(Button *btn)

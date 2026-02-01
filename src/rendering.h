@@ -3,13 +3,28 @@
 
 #include <raylib.h>
 #include <common.h>
-#include <rendering.h>
+#include <ui.h>
 
 #define TILE_SIZE 16
-#define VIRTUAL_WIDTH 160
-#define VIRTUAL_HEIGHT 160
+#define VIRTUAL_WIDTH 200
+#define VIRTUAL_HEIGHT 200
 #define SCREEN_WIDTH 800
 #define SCREEN_HEIGHT 800
+
+// UI layout constants
+#define HUD_FONT_SIZE 8
+#define HUD_TOP_MARGIN 10
+#define BTN_WIDTH 46
+#define BTN_HEIGHT 14
+#define BTN_Y 182
+#define BTN_GAP 2
+
+// Animation constants
+#define ANIM_FPS_ROBOT 10
+#define ANIM_FPS_DISASSEMBLY 15
+#define ANIM_SPEED 2.0f
+#define FOG_SCROLL_SPEED 0.2f
+#define FOG_ALPHA 180
 
 typedef struct
 {
@@ -82,6 +97,13 @@ void draw_hud(State *state, int fuel, int enemy_count, int level);
 #define MAX_WORLD_WIDTH 16
 #define MAX_WORLD_HEIGHT 16
 
+// Button indices
+#define BTN_EXECUTE 0
+#define BTN_RESET 1
+#define BTN_FOG 2
+#define BTN_QUIT 3
+#define BTN_COUNT 4
+
 // Renderer context - encapsulates all rendering state
 typedef struct
 {
@@ -96,6 +118,8 @@ typedef struct
 	Texture2D fog_texture;
 	float fog_scroll;
 	bool fog_map[MAX_WORLD_WIDTH * MAX_WORLD_HEIGHT];
+	// UI buttons
+	Button buttons[BTN_COUNT];
 } Renderer;
 
 Renderer *init_renderer(void);
@@ -110,5 +134,9 @@ void renderer_set_fog(Renderer *r, int x, int y, bool fogged);
 bool renderer_get_fog(Renderer *r, int x, int y);
 void renderer_clear_fog(Renderer *r);
 void renderer_fill_fog(Renderer *r, World *w);
+
+// UI functions
+void renderer_update_buttons(Renderer *r);
+bool renderer_button_clicked(Renderer *r, int button_id);
 
 #endif

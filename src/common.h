@@ -14,6 +14,14 @@
 #define EXEC_SPEED_SECONDS (1.0f)
 #define EXEC_SPEED ((int)(EXEC_SPEED_SECONDS*60)) /* frames per statement executed */
 
+// World generation constants
+#define DEFAULT_WORLD_WIDTH 10
+#define DEFAULT_WORLD_HEIGHT 8
+#define DEFAULT_ROBOT_COUNT 4
+#define WALL_DIVISOR 10      // Interior tiles / this = wall count
+#define ENERGY_DIVISOR 20    // Interior tiles / this = energy count
+#define MAX_PLACEMENT_ATTEMPTS 100
+
 
 typedef enum
 {
